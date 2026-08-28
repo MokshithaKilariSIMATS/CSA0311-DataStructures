@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Structure Lab — Tree & Trie Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F6F7F9;
+    --bg-dot: #EEF0F3;
+    --panel: #FFFFFF;
+    --panel-2: #F3F4F7;
+    --border: #E1E4EA;
+    --text: #1A1F26;
+    --text-dim: #5B6472;
+    --text-faint: #98A2B3;
+    --teal: #0F9B8E;
+    --teal-dim: #D3F3EF;
+    --gold: #C8890A;
+    --red-node: #E5484D;
+    --red-node-dim: #FBE2E2;
+    --black-node: #2D333B;
+    --line: #C7CDD6;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:
+      radial-gradient(circle at 1px 1px, #DDE1E8 1px, transparent 1px) 0 0/22px 22px,
+      var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+  }
+  .wrap{ display:flex; flex-direction:column; min-height:100vh; }
+
+  header{
+    padding: 22px 28px 16px 28px;
+    border-bottom: 1px solid var(--border);
+    display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+  }
+  header .title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700; font-size: 22px; letter-spacing: -0.01em;
+  }
+  header .title span{ color: var(--teal); }
+  header .sub{ color: var(--text-dim); font-size: 12.5px; }
+
+  .tabs{
+    display:flex; gap:8px; padding: 16px 28px 0 28px;
+  }
+  .tab{
+    font-family:'Space Grotesk', sans-serif;
+    background: var(--panel-2); border:1px solid var(--border);
+    color: var(--text-dim); padding: 9px 18px; border-radius: 8px 8px 0 0;
+    cursor:pointer; font-size:13.5px; font-weight:600; letter-spacing:.02em;
+    border-bottom: none; position: relative; top: 1px;
+  }
+  .tab.active{
+    color: var(--text); background: var(--panel); border-bottom: 1px solid var(--panel);
+  }
+  .tab.active.trie, .tab.active.binary, .tab.active.bst, .tab.active.avl, .tab.active.splay{ box-shadow: inset 0 2px 0 var(--teal); }
+  .tab.active.rbt{ box-shadow: inset 0 2px 0 var(--red-node); }
+
+  main{
+    flex:1; display:flex; border-top:1px solid var(--border);
+    min-height: 560px;
+  }
+  .rail{
+    width: 320px; flex-shrink:0; background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 20px; display:flex; flex-direction:column; gap: 18px;
+    overflow-y:auto;
+  }
+  .field-label{
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .09em;
+    color: var(--text-faint); margin-bottom: 7px; font-weight:600;
+  }
+  textarea, input[type=text]{
+    width:100%; background: var(--panel-2); border:1px solid var(--border);
+    color: var(--text); font-family:'JetBrains Mono', monospace; font-size: 13px;
+    padding: 10px 11px; border-radius: 7px; resize: vertical;
+  }
+  textarea:focus, input[type=text]:focus{ outline:none; border-color: var(--teal); }
+  .hint{ font-size: 11px; color: var(--text-faint); margin-top: 6px; line-height:1.5; }
+
+  .row{ display:flex; gap: 8px; align-items:center; }
+  .count-box{ display:flex; align-items:center; gap:6px; background:var(--panel-2); border:1px solid var(--border); border-radius:7px; padding: 4px 4px 4px 10px; }
+  .count-box span{ font-size:11px; color:var(--text-dim); }
+  .count-box input[type=number]{ width:44px; background:transparent; border:none; color:var(--text); font-family:'JetBrains Mono'; font-size:13px; padding:5px 0; }
+  .count-box input[type=number]:focus{ outline:none; }
+
+  button{
+    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size: 12.5px;
+    border-radius: 7px; border:1px solid var(--border); cursor:pointer;
+    padding: 9px 14px; background: var(--panel-2); color: var(--text);
+    transition: border-color .15s, color .15s;
+  }
+  button:hover:not(:disabled){ border-color: var(--text-dim); }
+  button:disabled{ opacity:.35; cursor:not-allowed; }
+  .btn-random{ flex:1; }
+  .btn-primary{
+    width:100%; background: var(--teal); color: #06201d; border-color: var(--teal);
+    padding: 11px 14px; font-size:13.5px;
+  }
+  .btn-primary:hover:not(:disabled){ filter: brightness(1.08); }
+  body.rbt-mode .btn-primary{ background: var(--red-node); color: #2a0708; border-color: var(--red-node); }
+
+  .divider{ height:1px; background: var(--border); margin: 2px 0; }
+
+  .op-toggle{ display:flex; gap:6px; }
+  .op-btn{ flex:1; text-align:center; padding:8px 10px; font-size:12px; }
+  .op-btn.active{ background: var(--teal); color:#fff; border-color: var(--teal); }
+  body.rbt-mode .op-btn.active{ background: var(--red-node); color:#fff; border-color: var(--red-node); }
+
+  .playback{ display:flex; flex-direction:column; gap:10px; }
+  .transport{ display:flex; gap:6px; }
+  .transport button{ flex:1; padding: 9px 6px; font-size: 15px; }
+  .step-counter{ font-size: 11.5px; color: var(--text-dim); text-align:center; }
+  .speed-row{ display:flex; align-items:center; gap:8px; }
+  .speed-row span{ font-size:11px; color:var(--text-faint); white-space:nowrap; }
+  input[type=range]{ width:100%; accent-color: var(--teal); }
+  body.rbt-mode input[type=range]{ accent-color: var(--red-node); }
+
+  .legend{ display:flex; gap:14px; font-size:11px; color:var(--text-dim); flex-wrap:wrap; }
+  .legend .dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+
+  .stage{
+    flex:1; display:flex; flex-direction:column; background: var(--bg-dot);
+    background-image: radial-gradient(circle at 1px 1px, #DDE1E8 1.2px, transparent 1.2px);
+    background-size: 20px 20px;
+  }
+  .canvas-holder{ flex:1; position:relative; overflow:auto; }
+  svg{ display:block; }
+  .empty-state{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:10px; color: var(--text-faint); text-align:center; padding: 20px;
+  }
+  .empty-state .big{ font-family:'Space Grotesk'; font-size:15px; color: var(--text-dim); font-weight:600; }
+
+  .ticker{
+    border-top: 1px solid var(--border); background: var(--panel);
+    padding: 14px 24px; display:flex; align-items:center; gap:16px; min-height: 56px;
+  }
+  .ticker .idx{
+    font-family:'Space Grotesk'; font-weight:700; font-size:13px; color: var(--teal);
+    background: var(--teal-dim); padding:4px 10px; border-radius:6px; flex-shrink:0;
+  }
+  body.rbt-mode .ticker .idx{ color: var(--red-node); background: var(--red-node-dim); }
+  .ticker .desc{ font-size: 13.5px; color: var(--text); line-height:1.4; }
+  .ticker .desc.placeholder{ color: var(--text-faint); font-style: italic; }
+
+  /* node animation */
+  .node-enter{ animation: popIn .38s cubic-bezier(.2,1.4,.4,1); }
+  @keyframes popIn{ from{ transform: scale(0); opacity:0; } to{ transform: scale(1); opacity:1; } }
+  .node-highlight circle, .node-highlight .box{ filter: drop-shadow(0 0 7px var(--gold)); }
+  .edge-enter{ animation: fadeIn .3s ease; }
+  @keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }
+
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-track{ background: var(--panel-2); }
+  ::-webkit-scrollbar-thumb{ background: var(--border); border-radius: 5px; }
+
+  @media (max-width: 820px){
+    main{ flex-direction:column; }
+    .rail{ width:auto; border-right:none; border-bottom:1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">Structure <span>Lab</span></div>
+    <div class="sub">watch six tree structures insert and delete, one operation at a time</div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab binary active" data-ds="binary">Binary Tree</div>
+    <div class="tab bst" data-ds="bst">Binary Search Tree</div>
+    <div class="tab avl" data-ds="avl">AVL Tree</div>
+    <div class="tab splay" data-ds="splay">Splay Tree</div>
+    <div class="tab trie" data-ds="trie">Trie</div>
+    <div class="tab rbt" data-ds="rbt">Red-Black Tree</div>
+  </div>
+
+  <main>
+    <div class="rail">
+      <div>
+        <div class="field-label" id="input-label">Values to insert (comma separated numbers)</div>
+        <textarea id="valuesInput" rows="3" placeholder="5, 3, 8, 1, 4, 7, 9">5, 3, 8, 1, 4, 7, 9</textarea>
+        <div class="hint" id="input-hint">Inserted level-order into the first empty slot found.</div>
+      </div>
+
+      <div class="row">
+        <button class="btn-random" id="randomBtn">🎲 Randomize</button>
+        <div class="count-box">
+          <span>n =</span>
+          <input type="number" id="randomCount" min="4" max="15" value="7">
+        </div>
+      </div>
+
+      <div>
+        <div class="field-label">Operation</div>
+        <div class="op-toggle">
+          <button class="op-btn active" id="opInsertBtn" data-op="insert">Insert</button>
+          <button class="op-btn" id="opDeleteBtn" data-op="delete">Delete</button>
+        </div>
+      </div>
+
+      <div id="deleteValueWrap" style="display:none">
+        <div class="field-label" id="delete-input-label">Key to delete</div>
+        <input type="text" id="deleteValueInput" placeholder="e.g. 19">
+        <div class="hint">The tree above is built from the values on the left, then this one value is deleted step by step.</div>
+      </div>
+
+      <button class="btn-primary" id="simulateBtn">▶ Simulate</button>
+
+      <div class="divider"></div>
+
+      <div class="playback">
+        <div class="field-label">Playback</div>
+        <div class="transport">
+          <button id="restartBtn" title="Restart">⏮</button>
+          <button id="prevBtn" title="Previous step">◀</button>
+          <button id="playBtn" title="Play / Pause">▶</button>
+          <button id="nextBtn" title="Next step">▶</button>
+          <button id="endBtn" title="Jump to end">⏭</button>
+        </div>
+        <input type="range" id="scrubber" min="0" max="0" value="0" step="1">
+        <div class="step-counter" id="stepCounter">no simulation yet</div>
+        <div class="speed-row">
+          <span>speed</span>
+          <input type="range" id="speedSlider" min="1" max="5" value="3">
+          <span id="speedLabel">normal</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="stage">
+      <div class="canvas-holder" id="canvasHolder">
+        <div class="empty-state" id="emptyState">
+          <div class="big">nothing built yet</div>
+          <div>enter values or randomize, then hit Simulate</div>
+        </div>
+        <svg id="svg" width="100%" height="100%"></svg>
+      </div>
+      <div class="ticker">
+        <div class="idx" id="tickerIdx">0 / 0</div>
+        <div class="desc placeholder" id="tickerDesc">Step description will appear here as the structure builds.</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  let ds = 'binary';         // current data structure
+  let opMode = 'insert';     // 'insert' | 'delete'
+  let steps = [];            // array of {snapshot, desc, highlight[]}
+  let cur = -1;               // current step index (-1 = nothing shown)
+  let playing = false;
+  let timer = null;
+
+  // ---------- DOM ----------
+  const $ = id => document.getElementById(id);
+  const valuesInput = $('valuesInput'), inputLabel = $('input-label'), inputHint = $('input-hint');
+  const randomBtn = $('randomBtn'), randomCount = $('randomCount'), simulateBtn = $('simulateBtn');
+  const restartBtn = $('restartBtn'), prevBtn = $('prevBtn'), playBtn = $('playBtn'), nextBtn = $('nextBtn'), endBtn = $('endBtn');
+  const scrubber = $('scrubber'), stepCounter = $('stepCounter');
+  const speedSlider = $('speedSlider'), speedLabel = $('speedLabel');
+  const svg = $('svg'), emptyState = $('emptyState'), canvasHolder = $('canvasHolder');
+  const tickerIdx = $('tickerIdx'), tickerDesc = $('tickerDesc');
+  const legend = $('legend');
+  const opInsertBtn = $('opInsertBtn'), opDeleteBtn = $('opDeleteBtn');
+  const deleteValueWrap = $('deleteValueWrap'), deleteInputLabel = $('delete-input-label'), deleteValueInput = $('deleteValueInput');
+
+  function setOpMode(mode){
+    opMode = mode;
+    opInsertBtn.classList.toggle('active', mode==='insert');
+    opDeleteBtn.classList.toggle('active', mode==='delete');
+    deleteValueWrap.style.display = mode==='delete' ? 'block' : 'none';
+    deleteInputLabel.textContent = (ds==='trie') ? 'Word to delete' : 'Key to delete';
+    deleteValueInput.placeholder = (ds==='trie') ? 'e.g. do' : 'e.g. 19';
+  }
+  opInsertBtn.addEventListener('click', ()=>setOpMode('insert'));
+  opDeleteBtn.addEventListener('click', ()=>setOpMode('delete'));
+
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      ds = t.dataset.ds;
+      document.body.classList.toggle('rbt-mode', ds==='rbt');
+      document.body.classList.toggle('trie-mode', ds==='trie');
+      resetPlayback();
+      if(ds==='trie'){
+        inputLabel.textContent = 'Words to insert (comma separated)';
+        inputHint.textContent = 'Letters only, each word becomes a path from the root.';
+        valuesInput.value = 'cat, car, care, dog, do';
+        randomCount.value = 6; randomCount.max = 8; randomCount.min = 3;
+      } else if(ds==='rbt'){
+        inputLabel.textContent = 'Keys to insert (comma separated numbers)';
+        inputHint.textContent = 'Unique integers 1–99. Duplicates are skipped during simulate.';
+        valuesInput.value = '41, 38, 31, 12, 19, 8';
+        randomCount.value = 8; randomCount.max = 15; randomCount.min = 4;
+      } else if(ds==='binary'){
+        inputLabel.textContent = 'Values to insert (comma separated numbers)';
+        inputHint.textContent = 'Inserted level-order into the first empty slot found.';
+        valuesInput.value = '5, 3, 8, 1, 4, 7, 9';
+        randomCount.value = 7; randomCount.max = 15; randomCount.min = 4;
+      } else if(ds==='bst'){
+        inputLabel.textContent = 'Keys to insert (comma separated numbers)';
+        inputHint.textContent = 'Unique integers. Duplicates are skipped during simulate.';
+        valuesInput.value = '41, 38, 31, 12, 19, 8';
+        randomCount.value = 8; randomCount.max = 15; randomCount.min = 4;
+      } else if(ds==='avl'){
+        inputLabel.textContent = 'Keys to insert (comma separated numbers)';
+        inputHint.textContent = 'Unique integers. Tree self-balances with rotations after each insert.';
+        valuesInput.value = '10, 20, 30, 40, 50, 25';
+        randomCount.value = 8; randomCount.max = 15; randomCount.min = 4;
+      } else if(ds==='splay'){
+        inputLabel.textContent = 'Keys to insert (comma separated numbers)';
+        inputHint.textContent = 'Unique integers. Each inserted key is splayed up to the root.';
+        valuesInput.value = '5, 3, 8, 1, 4, 7, 9';
+        randomCount.value = 7; randomCount.max = 15; randomCount.min = 4;
+      }
+      deleteInputLabel.textContent = (ds==='trie') ? 'Word to delete' : 'Key to delete';
+      deleteValueInput.placeholder = (ds==='trie') ? 'e.g. do' : 'e.g. 19';
+      deleteValueInput.value = '';
+      renderLegend();
+      renderEmpty();
+    });
+  });
+
+  function renderLegend(){
+    if(ds==='trie'){
+      legend.innerHTML = `<span><span class="dot" style="background:var(--teal)"></span>trie node</span>
+        <span><span class="dot" style="background:var(--gold)"></span>end of word</span>`;
+    } else if(ds==='rbt'){
+      legend.innerHTML = `<span><span class="dot" style="background:var(--red-node)"></span>red</span>
+        <span><span class="dot" style="background:var(--black-node);border:1px solid var(--line)"></span>black</span>
+        <span><span class="dot" style="background:var(--gold)"></span>active node</span>`;
+    } else {
+      legend.innerHTML = `<span><span class="dot" style="background:var(--panel-2);border:1px solid var(--teal)"></span>node</span>
+        <span><span class="dot" style="background:var(--gold)"></span>active node</span>`;
+    }
+  }
+
+  randomBtn.addEventListener('click', ()=>{
+    const n = Math.max(3, Math.min(20, parseInt(randomCount.value)||6));
+    if(ds==='trie'){
+      const alphabets = 'abcdefg';
+      const words = new Set();
+      while(words.size < n){
+        const len = 2 + Math.floor(Math.random()*4);
+        let w='';
+        for(let i=0;i<len;i++) w += alphabets[Math.floor(Math.random()*alphabets.length)];
+        words.add(w);
+      }
+      valuesInput.value = Array.from(words).join(', ');
+    } else {
+      const nums = new Set();
+      while(nums.size < n) nums.add(1+Math.floor(Math.random()*99));
+      valuesInput.value = Array.from(nums).join(', ');
+    }
+  });
+
+  simulateBtn.addEventListener('click', ()=>{
+    const raw = valuesInput.value.split(',').map(s=>s.trim()).filter(Boolean);
+    if(raw.length===0) return;
+    if(opMode==='insert'){
+      steps = buildInsertSteps(ds, raw);
+    } else {
+      const delRaw = deleteValueInput.value.trim();
+      if(!delRaw) return;
+      steps = buildDeleteSteps(ds, raw, delRaw);
+    }
+    cur = steps.length ? 0 : -1;
+    scrubber.max = Math.max(0, steps.length-1);
+    scrubber.value = 0;
+    renderStep();
+  });
+
+  function buildInsertSteps(dsName, raw){
+    if(dsName==='trie') return buildTrieSteps(raw).steps;
+    if(dsName==='rbt') return buildRbtSteps(raw).steps;
+    if(dsName==='binary') return buildBinarySteps(raw).steps;
+    if(dsName==='bst') return buildBstSteps(raw).steps;
+    if(dsName==='avl') return buildAvlSteps(raw).steps;
+    if(dsName==='splay') return buildSplaySteps(raw).steps;
+  }
+  function buildDeleteSteps(dsName, raw, delRaw){
+    if(dsName==='trie'){
+      const built = buildTrieSteps(raw);
+      return trieDeleteSteps(built.root, delRaw, built.idCounter).steps;
+    }
+    if(dsName==='rbt'){
+      const built = buildRbtSteps(raw);
+      return rbtDeleteSteps(built.root, built.NIL, delRaw).steps;
+    }
+    const key = parseInt(delRaw,10);
+    if(isNaN(key)) return [{snap:null, desc:'Enter a valid number to delete.', highlight:[]}];
+    if(dsName==='binary'){ const built=buildBinarySteps(raw); return btDeleteSteps(built.root, key).steps; }
+    if(dsName==='bst'){ const built=buildBstSteps(raw); return bstDeleteSteps(built.root, key).steps; }
+    if(dsName==='avl'){ const built=buildAvlSteps(raw); return avlDeleteSteps(built.root, key).steps; }
+    if(dsName==='splay'){ const built=buildSplaySteps(raw); return splayDeleteSteps(built.root, key).steps; }
+  }
+
+  // ---------- Trie build ----------
+  function cloneTrieNode(n){
+    const c = { id:n.id, ch:n.ch, isEnd:n.isEnd, children:{} };
+    for(const k in n.children) c.children[k] = cloneTrieNode(n.children[k]);
+    return c;
+  }
+  function buildTrieSteps(words){
+    let idCounter = 0;
+    const root = { id: idCounter++, ch: '•', isEnd:false, children:{} };
+    const stepsArr = [];
+    stepsArr.push({ snap: cloneTrieNode(root), desc: 'Start with an empty trie (root node).', highlight:[root.id] });
+    for(const wRaw of words){
+      const w = wRaw.toLowerCase().replace(/[^a-z]/g,'');
+      if(!w) continue;
+      let node = root;
+      for(const c of w){
+        if(node.children[c]){
+          node = node.children[c];
+          stepsArr.push({ snap: cloneTrieNode(root), desc: `Inserting "${w}": '${c}' already exists — follow existing path.`, highlight:[node.id] });
+        } else {
+          const nn = { id: idCounter++, ch:c, isEnd:false, children:{} };
+          node.children[c] = nn;
+          node = nn;
+          stepsArr.push({ snap: cloneTrieNode(root), desc: `Inserting "${w}": create new node for '${c}'.`, highlight:[node.id] });
+        }
+      }
+      if(!node.isEnd){
+        node.isEnd = true;
+        stepsArr.push({ snap: cloneTrieNode(root), desc: `Mark end of word "${w}".`, highlight:[node.id] });
+      }
+    }
+    return { root, steps: stepsArr, idCounter };
+  }
+
+  // ---------- Trie delete ----------
+  function trieDeleteSteps(root, wordRaw, idCounterStart){
+    const stepsArr = [];
+    function snap(desc, hi){ stepsArr.push({ snap: cloneTrieNode(root), desc, highlight: hi||[] }); }
+    const w = (wordRaw||'').toLowerCase().replace(/[^a-z]/g,'');
+    snap(`Deleting "${w}".`, []);
+    if(!w){ snap('Enter a word to delete.', []); return { root, steps: stepsArr }; }
+    const path = [root];
+    let node = root;
+    for(const c of w){
+      if(!node.children[c]){ snap(`"${w}" not found in the trie.`, []); return { root, steps: stepsArr }; }
+      node = node.children[c];
+      path.push(node);
+      snap(`Following path for "${w}": at '${c}'.`, [node.id]);
+    }
+    if(!node.isEnd){ snap(`"${w}" not found as a complete word.`, []); return { root, steps: stepsArr }; }
+    node.isEnd = false;
+    snap(`Unmark end-of-word at "${w}".`, [node.id]);
+    for(let i=path.length-1;i>0;i--){
+      const curNode = path[i], parent = path[i-1];
+      if(Object.keys(curNode.children).length===0 && !curNode.isEnd){
+        delete parent.children[curNode.ch];
+        snap(`Node '${curNode.ch}' has no children and isn't an end marker — remove it.`, [parent.id]);
+      } else break;
+    }
+    return { root, steps: stepsArr };
+  }
+
+  // ---------- Red-Black Tree build ----------
+  function buildRbtSteps(rawVals){
+    const keys = [];
+    for(const v of rawVals){
+      const n = parseInt(v,10);
+      if(!isNaN(n) && !keys.includes(n)) keys.push(n);
+    }
+    const NIL = { key:null, color:'B', isNil:true };
+    NIL.left = NIL; NIL.right = NIL; NIL.parent = NIL;
+    const state = { root: NIL, NIL };
+    const stepsArr = [];
+
+    function cloneNode(n){
+      if(n === state.NIL || !n) return null;
+      return { key:n.key, color:n.color, left:cloneNode(n.left), right:cloneNode(n.right) };
+    }
+    function snap(desc, highlight){
+      stepsArr.push({ snap: cloneNode(state.root), desc, highlight: highlight||[] });
+    }
+    function leftRotate(x){
+      const y = x.right;
+      x.right = y.left;
+      if(y.left !== state.NIL) y.left.parent = x;
+      y.parent = x.parent;
+      if(x.parent === state.NIL) state.root = y;
+      else if(x === x.parent.left) x.parent.left = y;
+      else x.parent.right = y;
+      y.left = x; x.parent = y;
+    }
+    function rightRotate(x){
+      const y = x.left;
+      x.left = y.right;
+      if(y.right !== state.NIL) y.right.parent = x;
+      y.parent = x.parent;
+      if(x.parent === state.NIL) state.root = y;
+      else if(x === x.parent.right) x.parent.right = y;
+      else x.parent.left = y;
+      y.right = x; x.parent = y;
+    }
+    function fixup(z, origKey){
+      while(z.parent.color === 'R'){
+        const gp = z.parent.parent;
+        if(z.parent === gp.left){
+          const y = gp.right;
+          if(y.color === 'R'){
+            z.parent.color='B'; y.color='B'; gp.color='R';
+            snap(`Uncle of ${origKey} is red → recolor parent & uncle black, grandparent red.`, [z.parent.key, y.key, gp.key].filter(k=>k!=null));
+            z = gp;
+          } else {
+            if(z === z.parent.right){
+              z = z.parent;
+              leftRotate(z);
+              snap(`Uncle is black, ${origKey} forms a triangle → left-rotate to straighten.`, [z.key]);
+            }
+            z.parent.color='B'; z.parent.parent.color='R';
+            const g = z.parent.parent;
+            rightRotate(g);
+            snap(`Uncle is black, straight line → recolor and right-rotate grandparent.`, [z.key]);
+          }
+        } else {
+          const y = gp.left;
+          if(y.color === 'R'){
+            z.parent.color='B'; y.color='B'; gp.color='R';
+            snap(`Uncle of ${origKey} is red → recolor parent & uncle black, grandparent red.`, [z.parent.key, y.key, gp.key].filter(k=>k!=null));
+            z = gp;
+          } else {
+            if(z === z.parent.left){
+              z = z.parent;
+              rightRotate(z);
+              snap(`Uncle is black, ${origKey} forms a triangle → right-rotate to straighten.`, [z.key]);
+            }
+            z.parent.color='B'; z.parent.parent.color='R';
+            const g = z.parent.parent;
+            leftRotate(g);
+            snap(`Uncle is black, straight line → recolor and left-rotate grandparent.`, [z.key]);
+          }
+        }
+      }
+      if(state.root.color !== 'B'){
+        state.root.color = 'B';
+        snap(`Root recolored black to preserve the red-black property.`, [state.root.key]);
+      }
+    }
+    function insert(k){
+      let y = state.NIL, x = state.root;
+      while(x !== state.NIL){
+        y = x;
+        x = (k < x.key) ? x.left : x.right;
+      }
+      const z = { key:k, color:'R', left:state.NIL, right:state.NIL, parent:y };
+      if(y === state.NIL) state.root = z;
+      else if(k < y.key) y.left = z; else y.right = z;
+      snap(`Insert ${k} as a red leaf via BST rules.`, [k]);
+      fixup(z, k);
+    }
+
+    snap('Start with an empty tree.', []);
+    for(const k of keys) insert(k);
+    return { root: state.root, NIL: state.NIL, steps: stepsArr };
+  }
+
+  // ---------- Red-Black Tree delete ----------
+  function rbtDeleteSteps(root, NIL, keyRaw){
+    const state = { root: (root===undefined||root===null) ? NIL : root, NIL };
+    const stepsArr = [];
+    function cloneNode(n){
+      if(n === state.NIL || !n) return null;
+      return { key:n.key, color:n.color, left:cloneNode(n.left), right:cloneNode(n.right) };
+    }
+    function snap(desc, highlight){
+      stepsArr.push({ snap: cloneNode(state.root), desc, highlight: highlight||[] });
+    }
+    function leftRotate(x){
+      const y = x.right;
+      x.right = y.left;
+      if(y.left !== state.NIL) y.left.parent = x;
+      y.parent = x.parent;
+      if(x.parent === state.NIL) state.root = y;
+      else if(x === x.parent.left) x.parent.left = y;
+      else x.parent.right = y;
+      y.left = x; x.parent = y;
+    }
+    function rightRotate(x){
+      const y = x.left;
+      x.left = y.right;
+      if(y.right !== state.NIL) y.right.parent = x;
+      y.parent = x.parent;
+      if(x.parent === state.NIL) state.root = y;
+      else if(x === x.parent.right) x.parent.right = y;
+      else x.parent.left = y;
+      y.right = x; x.parent = y;
+    }
+    function transplant(u, v){
+      if(u.parent === state.NIL) state.root = v;
+      else if(u === u.parent.left) u.parent.left = v;
+      else u.parent.right = v;
+      v.parent = u.parent;
+    }
+    function treeMin(x){ while(x.left !== state.NIL) x = x.left; return x; }
+    function deleteFixup(x){
+      while(x !== state.root && x.color === 'B'){
+        if(x === x.parent.left){
+          let w = x.parent.right;
+          if(w.color === 'R'){
+            w.color='B'; x.parent.color='R';
+            leftRotate(x.parent);
+            snap(`Sibling ${w.key} is red → recolor and left-rotate.`, [w.key]);
+            w = x.parent.right;
+          }
+          if(w.left.color === 'B' && w.right.color === 'B'){
+            w.color = 'R';
+            snap(`Sibling's children are both black → recolor sibling red, move up.`, [w.key].filter(k=>k!=null));
+            x = x.parent;
+          } else {
+            if(w.right.color === 'B'){
+              w.left.color='B'; w.color='R';
+              rightRotate(w);
+              snap(`Sibling's near child is red → recolor and right-rotate sibling.`, [w.key]);
+              w = x.parent.right;
+            }
+            w.color = x.parent.color; x.parent.color='B'; w.right.color='B';
+            leftRotate(x.parent);
+            snap(`Sibling's far child is red → recolor and left-rotate parent.`, [w.key]);
+            x = state.root;
+          }
+        } else {
+          let w = x.parent.left;
+          if(w.color === 'R'){
+            w.color='B'; x.parent.color='R';
+            rightRotate(x.parent);
+            snap(`Sibling ${w.key} is red → recolor and right-rotate.`, [w.key]);
+            w = x.parent.left;
+          }
+          if(w.right.color === 'B' && w.left.color === 'B'){
+            w.color = 'R';
+            snap(`Sibling's children are both black → recolor sibling red, move up.`, [w.key].filter(k=>k!=null));
+            x = x.parent;
+          } else {
+            if(w.left.color === 'B'){
+              w.right.color='B'; w.color='R';
+              leftRotate(w);
+              snap(`Sibling's near child is red → recolor and left-rotate sibling.`, [w.key]);
+              w = x.parent.left;
+            }
+            w.color = x.parent.color; x.parent.color='B'; w.left.color='B';
+            rightRotate(x.parent);
+            snap(`Sibling's far child is red → recolor and right-rotate parent.`, [w.key]);
+            x = state.root;
+          }
+        }
+      }
+      x.color = 'B';
+    }
+
+    const k = parseInt(keyRaw,10);
+    snap(`Deleting ${isNaN(k)?keyRaw:k}.`, []);
+    if(isNaN(k)){ snap('Enter a valid number to delete.', []); return { root: state.root, steps: stepsArr }; }
+    let z = state.root;
+    while(z !== state.NIL && z.key !== k){
+      snap(`${k} ${k<z.key?'<':'>'} ${z.key} → go ${k<z.key?'left':'right'}.`, [z.key]);
+      z = k < z.key ? z.left : z.right;
+    }
+    if(z === state.NIL){ snap(`${k} not found.`, []); return { root: state.root, steps: stepsArr }; }
+    snap(`Found ${k}.`, [z.key]);
+    let y = z, yOrigColor = y.color, x;
+    if(z.left === state.NIL){ x = z.right; transplant(z, z.right); snap(`No left child — splice out ${k}.`, []); }
+    else if(z.right === state.NIL){ x = z.left; transplant(z, z.left); snap(`No right child — splice out ${k}.`, []); }
+    else {
+      y = treeMin(z.right); yOrigColor = y.color; x = y.right;
+      snap(`Two children — successor is ${y.key}.`, [y.key]);
+      if(y.parent === z) x.parent = y;
+      else { transplant(y, y.right); y.right = z.right; y.right.parent = y; }
+      transplant(z, y); y.left = z.left; y.left.parent = y; y.color = z.color;
+      snap(`Replace ${k} with successor ${y.key}.`, [y.key]);
+    }
+    if(yOrigColor === 'B'){ snap(`Removed node was black — fix up the tree to restore red-black balance.`, []); deleteFixup(x); }
+    return { root: state.root, steps: stepsArr };
+  }
+
+  // ---------- Binary Tree build ----------
+  function cloneBinaryNode(n){
+    if(!n) return null;
+    return { key:n.key, left:cloneBinaryNode(n.left), right:cloneBinaryNode(n.right) };
+  }
+  function buildBinarySteps(rawVals){
+    const vals = [];
+    for(const v of rawVals){ const n=parseInt(v,10); if(!isNaN(n)) vals.push(n); }
+    let root = null;
+    const stepsArr = [];
+    function snap(desc,hi){ stepsArr.push({ snap: cloneBinaryNode(root), desc, highlight: hi||[] }); }
+    snap('Start with an empty binary tree.', []);
+    for(const key of vals){
+      if(!root){ root = { key, left:null, right:null }; snap(`Tree empty — ${key} becomes the root.`, [key]); continue; }
+      const q = [root];
+      while(q.length){
+        const node = q.shift();
+        snap(`Level-order scan: visiting ${node.key} looking for an empty child slot.`, [node.key]);
+        if(!node.left){ node.left = { key, left:null, right:null }; snap(`Empty left slot under ${node.key} — insert ${key}.`, [key]); break; }
+        q.push(node.left);
+        if(!node.right){ node.right = { key, left:null, right:null }; snap(`Empty right slot under ${node.key} — insert ${key}.`, [key]); break; }
+        q.push(node.right);
+      }
+    }
+    return { root, steps: stepsArr };
+  }
+
+  // ---------- Binary Tree delete ----------
+  function btDeleteSteps(root, key){
+    const stepsArr = [];
+    function snap(desc,hi){ stepsArr.push({ snap: cloneBinaryNode(root), desc, highlight: hi||[] }); }
+    snap(`Deleting ${key} from the binary tree.`, []);
+    if(!root){ snap('Tree is empty — nothing to delete.', []); return { root, steps: stepsArr }; }
+    let target=null, targetInfo=null, deepest=null, deepestInfo=null;
+    const q = [{ node: root, parent: null, side: null }];
+    while(q.length){
+      const cur = q.shift();
+      snap(`Scanning ${cur.node.key} for target ${key}.`, [cur.node.key]);
+      if(cur.node.key===key && !target){ target = cur.node; targetInfo = cur; }
+      deepest = cur.node; deepestInfo = cur;
+      if(cur.node.left) q.push({ node: cur.node.left, parent: cur.node, side:'left' });
+      if(cur.node.right) q.push({ node: cur.node.right, parent: cur.node, side:'right' });
+    }
+    if(!target){ snap(`${key} not found in the tree.`, []); return { root, steps: stepsArr }; }
+    snap(`Found ${key}. Deepest last node in level order is ${deepest.key}.`, [target.key, deepest.key]);
+    if(target===deepest){
+      if(targetInfo.parent) targetInfo.parent[targetInfo.side] = null; else root = null;
+      snap(`${key} is the deepest node — remove it directly.`, []);
+    } else {
+      target.key = deepest.key;
+      snap(`Copy deepest value ${deepest.key} into the node being deleted.`, [target.key]);
+      if(deepestInfo.parent) deepestInfo.parent[deepestInfo.side] = null;
+      snap(`Remove the now-duplicate deepest node ${deepest.key}.`, []);
+    }
+    return { root, steps: stepsArr };
+  }
+
+  // ---------- BST build ----------
+  function buildBstSteps(rawVals){
+    const vals = [];
+    for(const v of rawVals){ const n=parseInt(v,10); if(!isNaN(n) && !vals.includes(n)) vals.push(n); }
+    let root = null;
+    const stepsArr = [];
+    function snap(desc,hi){ stepsArr.push({ snap: cloneBinaryNode(root), desc, highlight: hi||[] }); }
+    snap('Start with an empty BST.', []);
+    for(const key of vals){
+      if(!root){ root = { key, left:null, right:null }; snap(`Tree empty — ${key} becomes the root.`, [key]); continue; }
+      let cur = root;
+      while(true){
+        if(key === cur.key){ snap(`${key} already exists — skip duplicate.`, [cur.key]); break; }
+        if(key < cur.key){
+          snap(`${key} < ${cur.key} → go left.`, [cur.key]);
+          if(!cur.left){ cur.left = { key, left:null, right:null }; snap(`Empty left slot — insert ${key}.`, [key]); break; }
+          cur = cur.left;
+        } else {
+          snap(`${key} > ${cur.key} → go right.`, [cur.key]);
+          if(!cur.right){ cur.right = { key, left:null, right:null }; snap(`Empty right slot — insert ${key}.`, [key]); break; }
+          cur = cur.right;
+        }
+      }
+    }
+    return { root, steps: stepsArr };
+  }
+
+  // ---------- BST delete ----------
+  function bstDeleteSteps(root, key){
+    const stepsArr = [];
+    function snap(desc,hi){ stepsArr.push({ snap: cloneBinaryNode(root), desc, highlight: hi||[] }); }
+    snap(`Deleting ${key} from the BST.`, []);
+    let parent=null, side=null, cur=root;
+    while(cur && cur.key !== key){
+      snap(`${key} ${key<cur.key?'<':'>'} ${cur.key} → go ${key<cur.key?'left':'right'}.`, [cur.key]);
+      parent = cur; side = key<cur.key ? 'left' : 'right';
+      cur = key<cur.key ? cur.left : cur.right;
+    }
+    if(!cur){ snap(`${key} not found.`, []); return { root, steps: stepsArr }; }
+    snap(`Found ${key}.`, [cur.key]);
+    function replace(oldParent, oldSide, newNode){
+      if(oldParent) oldParent[oldSide] = newNode; else root = newNode;
+    }
+    if(!cur.left && !cur.right){
+      replace(parent, side, null);
+      snap(`${key} is a leaf — remove it.`, []);
+    } else if(!cur.left || !cur.right){
+      const child = cur.left || cur.right;
+      replace(parent, side, child);
+      snap(`${key} has one child — splice it out, link child up.`, [child.key]);
+    } else {
+      let sParent = cur, s = cur.right;
+      snap(`${key} has two children — find inorder successor (leftmost of right subtree).`, [s.key]);
+      while(s.left){ sParent = s; s = s.left; snap(`Successor candidate ${s.key}.`, [s.key]); }
+      cur.key = s.key;
+      snap(`Copy successor ${s.key} into ${key}'s position.`, [cur.key]);
+      if(sParent.left === s) sParent.left = s.right; else sParent.right = s.right;
+      snap(`Remove duplicate successor node ${s.key} from its original spot.`, []);
+    }
+    return { root, steps: stepsArr };
+  }
+
+  // ---------- AVL build / delete (shared helpers) ----------
+  function avlH(n){ return n ? n.height : 0; }
+  function avlUpdH(n){ n.height = 1 + Math.max(avlH(n.left), avlH(n.right)); }
+  function avlBF(n){ return avlH(n.left) - avlH(n.right); }
+  function avlRotR(y){ const x=y.left; y.left=x.right; x.right=y; avlUpdH(y); avlUpdH(x); return x; }
+  function avlRotL(x){ const y=x.right; x.right=y.left; y.left=x; avlUpdH(x); avlUpdH(y); return y; }
+  function avlFindKey(n,key){ while(n){ if(key===n.key) return n; n = key<n.key ? n.left : n.right; } return null; }
+  function cloneAvlNode(n){
+    if(!n) return null;
+    return { key:n.key, left:cloneAvlNode(n.left), right:cloneAvlNode(n.right), height:n.height };
+  }
+  function avlRebalancePath(path, root, snap){
+    for(let i=path.length-1;i>=0;i--){
+      const node = path[i];
+      avlUpdH(node);
+      const balance = avlBF(node);
+      let newSub = node;
+      if(balance>1 && avlBF(node.left)>=0){ newSub = avlRotR(node); snap(`Left-heavy at ${node.key} (LL case) — right rotate.`, [node.key]); }
+      else if(balance>1 && avlBF(node.left)<0){ node.left = avlRotL(node.left); newSub = avlRotR(node); snap(`Left-heavy at ${node.key} (LR case) — rotate child left, then node right.`, [node.key]); }
+      else if(balance<-1 && avlBF(node.right)<=0){ newSub = avlRotL(node); snap(`Right-heavy at ${node.key} (RR case) — left rotate.`, [node.key]); }
+      else if(balance<-1 && avlBF(node.right)>0){ node.right = avlRotR(node.right); newSub = avlRotL(node); snap(`Right-heavy at ${node.key} (RL case) — rotate child right, then node left.`, [node.key]); }
+      if(newSub !== node){
+        if(i>0){ if(path[i-1].left===node) path[i-1].left=newSub; else path[i-1].right=newSub; }
+        else root = newSub;
+        path[i] = newSub;
+      }
+    }
+    return root;
+  }
+  function buildAvlSteps(rawVals){
+    const vals = [];
+    for(const v of rawVals){ const n=parseInt(v,10); if(!isNaN(n) && !vals.includes(n)) vals.push(n); }
+    let root = null;
+    const stepsArr = [];
+    function snap(desc,hi){ stepsArr.push({ snap: cloneAvlNode(root), desc, highlight: hi||[] }); }
+    snap('Start with an empty AVL tree.', []);
+    for(const key of vals){
+      if(!root){ root = { key, left:null, right:null, height:1 }; snap(`Tree empty — ${key} becomes the root.`, [key]); continue; }
+      if(avlFindKey(root,key)){ snap(`${key} already exists — skip duplicate.`, [key]); continue; }
+      const path = [];
+      let cur = root;
+      while(true){
+        path.push(cur);
+        if(key < cur.key){
+          snap(`${key} < ${cur.key} → go left.`, [cur.key]);
+          if(!cur.left){ cur.left = { key, left:null, right:null, height:1 }; break; }
+          cur = cur.left;
+        } else {
+          snap(`${key} > ${cur.key} → go right.`, [cur.key]);
+          if(!cur.right){ cur.right = { key, left:null, right:null, height:1 }; break; }
+          cur = cur.right;
+        }
+      }
+      snap(`Insert ${key} as a new leaf.`, [key]);
+      root = avlRebalancePath(path, root, snap);
+    }
+    return { root, steps: stepsArr };
+  }
+  function avlDeleteSteps(root, key){
+    const stepsArr = [];
+    function snap(desc,hi){ stepsArr.push({ snap: cloneAvlNode(root), desc, highlight: hi||[] }); }
+    snap(`Deleting ${key} from the AVL tree.`, []);
+    const path = []; let cur = root;
+    while(cur && cur.key !== key){
+      snap(`${key} ${key<cur.key?'<':'>'} ${cur.key} → go ${key<cur.key?'left':'right'}.`, [cur.key]);
+      path.push(cur);
+      cur = key<cur.key ? cur.left : cur.right;
+    }
+    if(!cur){ snap(`${key} not found.`, []); return { root, steps: stepsArr }; }
+    snap(`Found ${key}.`, [cur.key]);
+    let rebalanceFrom;
+    if(!cur.left || !cur.right){
+      const child = cur.left || cur.right;
+      if(path.length===0){ root = child; }
+      else { const p = path[path.length-1]; if(p.left===cur) p.left=child; else p.right=child; }
+      snap(`${key} has ${child?'one child':'no children'} — splice it out.`, []);
+      rebalanceFrom = path;
+    } else {
+      let sParent = cur, s = cur.right;
+      const succPath = [];
+      while(s.left){ succPath.push(s); sParent = s; s = s.left; }
+      snap(`${key} has two children — successor is ${s.key}.`, [s.key]);
+      cur.key = s.key;
+      snap(`Copy successor ${s.key} up.`, [cur.key]);
+      if(sParent.left===s) sParent.left = s.right; else sParent.right = s.right;
+      snap(`Remove duplicate successor node.`, []);
+      rebalanceFrom = path.concat([cur]).concat(succPath);
+    }
+    root = avlRebalancePath(rebalanceFrom, root, snap);
+    return { root, steps: stepsArr };
+  }
+
+  // ---------- Splay build / delete (shared helpers) ----------
+  function cloneSplayNode(n){
+    if(!n) return null;
+    return { key:n.key, left:cloneSplayNode(n.left), right:cloneSplayNode(n.right) };
+  }
+  function splayFindKey(n,key){ while(n){ if(key===n.key) return n; n = key<n.key ? n.left : n.right; } return null; }
+  function splayRotR(y){ const x=y.left; y.left=x.right; x.right=y; return x; }
+  function splayRotL(x){ const y=x.right; x.right=y.left; y.left=x; return y; }
+  function splayStepOnce(path, snap, root){
+    const n = path.length;
+    if(n===1) return root;
+    const x = path[n-1], p = path[n-2];
+    if(n===2){
+      const newSub = (p.left===x) ? splayRotR(p) : splayRotL(p);
+      snap(`Zig: rotate ${x.key} up to the root.`, [x.key]);
+      return newSub;
+    }
+    const g = path[n-3];
+    const gp = n>=4 ? path[n-4] : null;
+    let newSub;
+    if(g.left===p && p.left===x){
+      g.left = p.right; p.right = g;
+      p.left = x.right; x.right = p;
+      newSub = x;
+      snap(`Zig-zig (left-left): rotate ${x.key} up two levels.`, [x.key]);
+    } else if(g.right===p && p.right===x){
+      g.right = p.left; p.left = g;
+      p.right = x.left; x.left = p;
+      newSub = x;
+      snap(`Zig-zig (right-right): rotate ${x.key} up two levels.`, [x.key]);
+    } else if(g.left===p && p.right===x){
+      p.right = x.left; x.left = p;
+      g.left = x.right; x.right = g;
+      newSub = x;
+      snap(`Zig-zag (left-right): rotate ${x.key} up two levels.`, [x.key]);
+    } else {
+      p.left = x.right; x.right = p;
+      g.right = x.left; x.left = g;
+      newSub = x;
+      snap(`Zig-zag (right-left): rotate ${x.key} up two levels.`, [x.key]);
+    }
+    if(gp){ if(gp.left===g) gp.left=newSub; else gp.right=newSub; }
+    else root = newSub;
+    return root;
+  }
+  function splayToKey(root, key, snap){
+    let path = []; let cur = root;
+    while(cur){
+      path.push(cur);
+      if(key===cur.key) break;
+      cur = key<cur.key ? cur.left : cur.right;
+    }
+    while(path.length>1){
+      root = splayStepOnce(path, snap, root);
+      const target = path[path.length-1];
+      const newPath = []; let c = root;
+      while(c){ newPath.push(c); if(c===target) break; c = target.key<c.key ? c.left : c.right; }
+      path = newPath;
+    }
+    return root;
+  }
+  function buildSplaySteps(rawVals){
+    const vals = [];
+    for(const v of rawVals){ const n=parseInt(v,10); if(!isNaN(n)) vals.push(n); }
+    let root = null;
+    const stepsArr = [];
+    function snap(desc,hi){ stepsArr.push({ snap: cloneSplayNode(root), desc, highlight: hi||[] }); }
+    snap('Start with an empty splay tree.', []);
+    for(const key of vals){
+      if(!root){ root = { key, left:null, right:null }; snap(`Tree empty — ${key} becomes the root.`, [key]); continue; }
+      if(splayFindKey(root,key)){
+        snap(`${key} already exists — splay it to the root anyway.`, [key]);
+        root = splayToKey(root, key, snap);
+        continue;
+      }
+      let cur=root, parent=null, side=null;
+      while(cur){
+        snap(`${key} ${key<cur.key?'<':'>'} ${cur.key} → go ${key<cur.key?'left':'right'}.`, [cur.key]);
+        parent = cur; side = key<cur.key ? 'left' : 'right';
+        cur = key<cur.key ? cur.left : cur.right;
+      }
+      const leaf = { key, left:null, right:null };
+      parent[side] = leaf;
+      snap(`Insert ${key} as a new leaf.`, [key]);
+      root = splayToKey(root, key, snap);
+    }
+    return { root, steps: stepsArr };
+  }
+  function splayDeleteSteps(root, key){
+    const stepsArr = [];
+    function snap(desc,hi){ stepsArr.push({ snap: cloneSplayNode(root), desc, highlight: hi||[] }); }
+    snap(`Deleting ${key} from the splay tree.`, []);
+    if(!root){ snap('Tree is empty.', []); return { root, steps: stepsArr }; }
+    if(!splayFindKey(root,key)){
+      root = splayToKey(root, key, snap);
+      snap(`${key} not found (closest node splayed to the root).`, []);
+      return { root, steps: stepsArr };
+    }
+    root = splayToKey(root, key, snap);
+    snap(`${key} splayed to the root — ready to remove.`, [root.key]);
+    const L = root.left, R = root.right;
+    if(!L){ root = R; snap(`No left subtree — right subtree becomes the new tree.`, []); }
+    else {
+      let cur = L;
+      while(cur.right) cur = cur.right;
+      const L2 = splayToKey(L, cur.key, snap);
+      L2.right = R;
+      root = L2;
+      snap(`Largest key in left subtree splayed up and joined with right subtree.`, [L2.key]);
+    }
+    return { root, steps: stepsArr };
+  }
+
+  // ---------- Playback controls ----------
+  function resetPlayback(){
+    steps = []; cur=-1; playing=false; clearInterval(timer);
+    playBtn.textContent = '▶';
+    scrubber.max = 0; scrubber.value = 0;
+  }
+  function renderEmpty(){
+    svg.innerHTML=''; emptyState.style.display='flex';
+    tickerIdx.textContent='0 / 0';
+    tickerDesc.textContent='Step description will appear here as the structure builds.';
+    tickerDesc.classList.add('placeholder');
+    stepCounter.textContent='no simulation yet';
+  }
+  renderEmpty(); renderLegend();
+
+  function speedMs(){
+    const v = parseInt(speedSlider.value);
+    const map = {1:1500,2:1000,3:650,4:400,5:220};
+    return map[v]||650;
+  }
+  speedSlider.addEventListener('input', ()=>{
+    const labels = {1:'slow',2:'gentle',3:'normal',4:'fast',5:'turbo'};
+    speedLabel.textContent = labels[speedSlider.value];
+  });
+
+  restartBtn.addEventListener('click', ()=>{ if(!steps.length) return; cur=0; scrubber.value=0; renderStep(); });
+  endBtn.addEventListener('click', ()=>{ if(!steps.length) return; cur=steps.length-1; scrubber.value=cur; renderStep(); });
+  prevBtn.addEventListener('click', ()=>{ if(cur>0){ cur--; scrubber.value=cur; renderStep(); } });
+  nextBtn.addEventListener('click', ()=>{ if(cur<steps.length-1){ cur++; scrubber.value=cur; renderStep(); } });
+  scrubber.addEventListener('input', ()=>{ if(!steps.length) return; cur=parseInt(scrubber.value); renderStep(); });
+  playBtn.addEventListener('click', ()=>{
+    if(!steps.length) return;
+    playing = !playing;
+    playBtn.textContent = playing ? '⏸' : '▶';
+    if(playing) tick();
+    else clearInterval(timer);
+  });
+  function tick(){
+    clearInterval(timer);
+    timer = setInterval(()=>{
+      if(cur >= steps.length-1){ playing=false; playBtn.textContent='▶'; clearInterval(timer); return; }
+      cur++; scrubber.value=cur; renderStep();
+    }, speedMs());
+  }
+
+  function renderStep(){
+    if(cur<0 || !steps[cur]){ renderEmpty(); return; }
+    emptyState.style.display='none';
+    const step = steps[cur];
+    tickerIdx.textContent = `${cur+1} / ${steps.length}`;
+    tickerDesc.textContent = step.desc;
+    tickerDesc.classList.remove('placeholder');
+    stepCounter.textContent = `step ${cur+1} of ${steps.length}`;
+    if(ds==='trie') drawTrie(step.snap, step.highlight);
+    else if(ds==='rbt') drawRbt(step.snap, step.highlight);
+    else drawPlainBinary(step.snap, step.highlight);
+  }
+
+  // ---------- Drawing: Trie ----------
+  function drawTrie(root, highlight){
+    const NODE_R = 20, LEVEL_H = 84;
+    let leafCounter = 0;
+    const positions = {};
+    function layout(node, depth){
+      const isLeaf = Object.keys(node.children).length===0;
+      if(isLeaf){
+        positions[node.id] = { x: leafCounter*66 + 40, y: depth*LEVEL_H + 44, node };
+        leafCounter++;
+      } else {
+        const childXs = [];
+        const keysSorted = Object.keys(node.children).sort();
+        for(const k of keysSorted){ layout(node.children[k], depth+1); childXs.push(positions[node.children[k].id].x); }
+        const x = childXs.reduce((a,b)=>a+b,0)/childXs.length;
+        positions[node.id] = { x, y: depth*LEVEL_H + 44, node };
+      }
+    }
+    layout(root, 0);
+    const maxX = Math.max(...Object.values(positions).map(p=>p.x)) + 60;
+    const maxY = Math.max(...Object.values(positions).map(p=>p.y)) + 60;
+    svg.setAttribute('viewBox', `0 0 ${Math.max(maxX,400)} ${Math.max(maxY,300)}`);
+    svg.setAttribute('width', Math.max(maxX,400));
+    svg.setAttribute('height', Math.max(maxY,300));
+    svg.innerHTML = '';
+
+    // edges
+    function drawEdges(node){
+      const p = positions[node.id];
+      for(const k in node.children){
+        const c = positions[node.children[k].id];
+        const line = document.createElementNS(SVG_NS,'line');
+        line.setAttribute('x1',p.x); line.setAttribute('y1',p.y);
+        line.setAttribute('x2',c.x); line.setAttribute('y2',c.y);
+        line.setAttribute('stroke','var(--line)'); line.setAttribute('stroke-width','2');
+        line.setAttribute('class','edge-enter');
+        svg.appendChild(line);
+        const mx = (p.x+c.x)/2, my=(p.y+c.y)/2;
+        const label = document.createElementNS(SVG_NS,'text');
+        label.setAttribute('x',mx); label.setAttribute('y',my-6);
+        label.setAttribute('fill','var(--text-faint)'); label.setAttribute('font-size','11');
+        label.setAttribute('text-anchor','middle'); label.setAttribute('font-family',"'JetBrains Mono'");
+        label.textContent = k;
+        svg.appendChild(label);
+        drawEdges(node.children[k]);
+      }
+    }
+    drawEdges(root);
+
+    // nodes
+    for(const id in positions){
+      const {x,y,node} = positions[id];
+      const isHi = highlight.includes(node.id);
+      const g = document.createElementNS(SVG_NS,'g');
+      g.setAttribute('class', isHi ? 'node-enter node-highlight' : 'node-enter');
+      const circle = document.createElementNS(SVG_NS,'circle');
+      circle.setAttribute('cx',x); circle.setAttribute('cy',y); circle.setAttribute('r',NODE_R);
+      circle.setAttribute('fill', node.isEnd ? 'var(--gold)' : 'var(--panel-2)');
+      circle.setAttribute('stroke', node.isEnd ? 'var(--gold)' : 'var(--teal)');
+      circle.setAttribute('stroke-width','2.5');
+      g.appendChild(circle);
+      const text = document.createElementNS(SVG_NS,'text');
+      text.setAttribute('x',x); text.setAttribute('y',y+5);
+      text.setAttribute('text-anchor','middle'); text.setAttribute('font-family',"'JetBrains Mono'");
+      text.setAttribute('font-size','13'); text.setAttribute('font-weight','600');
+      text.setAttribute('fill', node.isEnd ? '#241a03' : 'var(--text)');
+      text.textContent = node.ch;
+      g.appendChild(text);
+      svg.appendChild(g);
+    }
+  }
+
+  // ---------- Drawing: Red-Black Tree ----------
+  function drawRbt(root, highlight){
+    const R = 21, LEVEL_H = 78, GAP = 56;
+    if(!root){
+      svg.innerHTML=''; svg.setAttribute('viewBox','0 0 400 300'); svg.setAttribute('width',400); svg.setAttribute('height',300);
+      return;
+    }
+    let xCounter = 0;
+    const pos = new Map();
+    function layout(node, depth){
+      if(!node) return;
+      layout(node.left, depth+1);
+      pos.set(node, { x: xCounter*GAP + 40, y: depth*LEVEL_H + 44, node });
+      xCounter++;
+      layout(node.right, depth+1);
+    }
+    layout(root, 0);
+    const xs = Array.from(pos.values()).map(p=>p.x);
+    const ys = Array.from(pos.values()).map(p=>p.y);
+    const maxX = Math.max(...xs)+60, maxY = Math.max(...ys)+60;
+    svg.setAttribute('viewBox', `0 0 ${Math.max(maxX,400)} ${Math.max(maxY,300)}`);
+    svg.setAttribute('width', Math.max(maxX,400));
+    svg.setAttribute('height', Math.max(maxY,300));
+    svg.innerHTML = '';
+
+    function drawEdges(node){
+      if(!node) return;
+      const p = pos.get(node);
+      [node.left, node.right].forEach(c=>{
+        if(!c) return;
+        const cp = pos.get(c);
+        const line = document.createElementNS(SVG_NS,'line');
+        line.setAttribute('x1',p.x); line.setAttribute('y1',p.y);
+        line.setAttribute('x2',cp.x); line.setAttribute('y2',cp.y);
+        line.setAttribute('stroke','var(--line)'); line.setAttribute('stroke-width','2');
+        line.setAttribute('class','edge-enter');
+        svg.appendChild(line);
+        drawEdges(c);
+      });
+    }
+    drawEdges(root);
+
+    pos.forEach(({x,y,node})=>{
+      const isHi = highlight.includes(node.key);
+      const g = document.createElementNS(SVG_NS,'g');
+      g.setAttribute('class', isHi ? 'node-enter node-highlight' : 'node-enter');
+      const circle = document.createElementNS(SVG_NS,'circle');
+      circle.setAttribute('cx',x); circle.setAttribute('cy',y); circle.setAttribute('r',R);
+      circle.setAttribute('fill', node.color==='R' ? 'var(--red-node)' : 'var(--black-node)');
+      circle.setAttribute('stroke', isHi ? 'var(--gold)' : (node.color==='R' ? '#8f2a2d' : 'var(--line)'));
+      circle.setAttribute('stroke-width', isHi ? '3' : '2');
+      g.appendChild(circle);
+      const text = document.createElementNS(SVG_NS,'text');
+      text.setAttribute('x',x); text.setAttribute('y',y+5);
+      text.setAttribute('text-anchor','middle'); text.setAttribute('font-family',"'JetBrains Mono'");
+      text.setAttribute('font-size','13'); text.setAttribute('font-weight','700');
+      text.setAttribute('fill', '#fff');
+      text.textContent = node.key;
+      g.appendChild(text);
+      svg.appendChild(g);
+    });
+  }
+
+  // ---------- Drawing: Binary Tree / BST / AVL / Splay (plain, teal accent) ----------
+  function drawPlainBinary(root, highlight){
+    const R = 21, LEVEL_H = 78, GAP = 56;
+    if(!root){
+      svg.innerHTML=''; svg.setAttribute('viewBox','0 0 400 300'); svg.setAttribute('width',400); svg.setAttribute('height',300);
+      return;
+    }
+    let xCounter = 0;
+    const pos = new Map();
+    function layout(node, depth){
+      if(!node) return;
+      layout(node.left, depth+1);
+      pos.set(node, { x: xCounter*GAP + 40, y: depth*LEVEL_H + 44, node });
+      xCounter++;
+      layout(node.right, depth+1);
+    }
+    layout(root, 0);
+    const xs = Array.from(pos.values()).map(p=>p.x);
+    const ys = Array.from(pos.values()).map(p=>p.y);
+    const maxX = Math.max(...xs)+60, maxY = Math.max(...ys)+60;
+    svg.setAttribute('viewBox', `0 0 ${Math.max(maxX,400)} ${Math.max(maxY,300)}`);
+    svg.setAttribute('width', Math.max(maxX,400));
+    svg.setAttribute('height', Math.max(maxY,300));
+    svg.innerHTML = '';
+
+    function drawEdges(node){
+      if(!node) return;
+      const p = pos.get(node);
+      [node.left, node.right].forEach(c=>{
+        if(!c) return;
+        const cp = pos.get(c);
+        const line = document.createElementNS(SVG_NS,'line');
+        line.setAttribute('x1',p.x); line.setAttribute('y1',p.y);
+        line.setAttribute('x2',cp.x); line.setAttribute('y2',cp.y);
+        line.setAttribute('stroke','var(--line)'); line.setAttribute('stroke-width','2');
+        line.setAttribute('class','edge-enter');
+        svg.appendChild(line);
+        drawEdges(c);
+      });
+    }
+    drawEdges(root);
+
+    pos.forEach(({x,y,node})=>{
+      const isHi = highlight.includes(node.key);
+      const g = document.createElementNS(SVG_NS,'g');
+      g.setAttribute('class', isHi ? 'node-enter node-highlight' : 'node-enter');
+      const circle = document.createElementNS(SVG_NS,'circle');
+      circle.setAttribute('cx',x); circle.setAttribute('cy',y); circle.setAttribute('r',R);
+      circle.setAttribute('fill', 'var(--panel-2)');
+      circle.setAttribute('stroke', isHi ? 'var(--gold)' : 'var(--teal)');
+      circle.setAttribute('stroke-width', isHi ? '3' : '2.5');
+      g.appendChild(circle);
+      const text = document.createElementNS(SVG_NS,'text');
+      text.setAttribute('x',x); text.setAttribute('y',y+5);
+      text.setAttribute('text-anchor','middle'); text.setAttribute('font-family',"'JetBrains Mono'");
+      text.setAttribute('font-size','13'); text.setAttribute('font-weight','700');
+      text.setAttribute('fill', 'var(--text)');
+      text.textContent = node.key;
+      g.appendChild(text);
+      svg.appendChild(g);
+    });
+  }
+})();
+</script>
+</body>
+</html>
