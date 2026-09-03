@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PulseRoute — Smart-City Emergency Routing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e16;
+  --bg-2:#0d1220;
+  --panel:#101728;
+  --panel-soft:#0c1220;
+  --border:#1c2740;
+  --border-soft:#161f34;
+  --text:#e7ecf5;
+  --text-dim:#8ea0bd;
+  --text-faint:#516padding;
+  --text-faint2:#54617a;
+  --cyan:#2dd4f0;
+  --cyan-soft:rgba(45,212,240,0.12);
+  --cyan-dim:#0f7a91;
+  --green:#3ddc97;
+  --amber:#f2b84b;
+  --orange:#f2924b;
+  --red:#f2586b;
+  --font-display:'Space Grotesk',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 700px at 85% -10%, #0f2233 0%, transparent 60%),
+    radial-gradient(900px 600px at -5% 105%, #0c1c2a 0%, transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:14px;
+  overflow:hidden;
+}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:#20304a;border-radius:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+
+.app{display:grid;grid-template-columns:220px 1fr;height:100vh;}
+
+/* SIDEBAR */
+.sidebar{
+  background:linear-gradient(180deg,#0b1120,#090d18);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  padding:18px 12px;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 8px 20px;}
+.brand-mark{
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,var(--cyan),#0a5a70);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 18px rgba(45,212,240,0.35);
+  flex:none;
+}
+.brand-mark svg{width:18px;height:18px;stroke:#04121a;}
+.brand-name{font-family:var(--font-display);font-weight:600;font-size:15.5px;letter-spacing:0.2px;line-height:1.1;}
+.brand-sub{font-family:var(--font-mono);font-size:9.5px;color:var(--text-faint2);letter-spacing:0.6px;margin-top:2px;}
+
+.nav{display:flex;flex-direction:column;gap:2px;flex:1;}
+.nav-item{
+  display:flex;align-items:center;gap:11px;
+  padding:9px 11px;border-radius:8px;
+  color:var(--text-dim);cursor:pointer;
+  font-size:13px;font-weight:500;
+  border:1px solid transparent;
+  transition:background .15s ease,color .15s ease;
+  user-select:none;
+}
+.nav-item svg{width:16px;height:16px;flex:none;opacity:.85;}
+.nav-item:hover{background:#121b2e;color:var(--text);}
+.nav-item.active{
+  background:var(--cyan-soft);
+  color:var(--cyan);
+  border-color:rgba(45,212,240,0.25);
+}
+.nav-item.active svg{opacity:1;}
+.nav-group-label{font-family:var(--font-mono);font-size:9.5px;color:var(--text-faint2);letter-spacing:1px;padding:14px 11px 6px;}
+
+.sidebar-foot{
+  border-top:1px solid var(--border-soft);
+  padding-top:12px;margin-top:10px;
+  font-family:var(--font-mono);font-size:10px;color:var(--text-faint2);
+  display:flex;flex-direction:column;gap:4px;
+}
+.sidebar-foot b{color:var(--text-dim);}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;min-width:0;height:100vh;}
+
+.topbar{
+  height:56px;flex:none;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:16px;
+  padding:0 20px;
+  background:rgba(11,16,28,0.7);
+  backdrop-filter:blur(6px);
+}
+.search{
+  flex:1;max-width:420px;
+  display:flex;align-items:center;gap:8px;
+  background:var(--panel-soft);
+  border:1px solid var(--border);
+  border-radius:8px;padding:7px 12px;
+  color:var(--text-faint2);
+}
+.search svg{width:14px;height:14px;flex:none;}
+.search input{
+  background:none;border:none;outline:none;color:var(--text);
+  font-size:12.5px;width:100%;font-family:var(--font-body);
+}
+.search input::placeholder{color:var(--text-faint2);}
+.topbar-right{display:flex;align-items:center;gap:10px;margin-left:auto;}
+.pill{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--font-mono);font-size:11px;
+  padding:6px 10px;border-radius:20px;
+  border:1px solid var(--border);background:var(--panel-soft);
+  color:var(--text-dim);white-space:nowrap;
+}
+.pill.online{color:var(--green);border-color:rgba(61,220,151,0.3);background:rgba(61,220,151,0.06);}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor;}
+.pill.clock{color:var(--text-dim);}
+
+.pages{flex:1;min-height:0;overflow:hidden;position:relative;}
+.page{display:none;height:100%;overflow:auto;padding:18px 20px 28px;}
+.page.active{display:block;}
+
+/* MONITOR LAYOUT */
+.monitor-grid{
+  display:grid;grid-template-columns:1fr 320px;gap:16px;height:calc(100vh - 92px);
+}
+.map-col{display:flex;flex-direction:column;gap:14px;min-height:0;}
+.side-col{display:flex;flex-direction:column;gap:14px;min-height:0;overflow:auto;padding-right:2px;}
+
+.panel{
+  background:linear-gradient(180deg,rgba(16,23,40,0.9),rgba(12,18,32,0.9));
+  border:1px solid var(--border);
+  border-radius:12px;
+  position:relative;
+}
+.panel-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 16px;border-bottom:1px solid var(--border-soft);
+}
+.panel-title{display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:600;font-size:13.5px;color:var(--text);}
+.panel-title svg{width:15px;height:15px;color:var(--cyan);}
+.panel-sub{font-family:var(--font-mono);font-size:10px;color:var(--text-faint2);}
+.panel-body{padding:14px 16px;}
+
+.map-panel{flex:1;min-height:0;display:flex;flex-direction:column;}
+.map-panel .panel-body{flex:1;min-height:0;padding:0;position:relative;overflow:hidden;border-radius:0 0 12px 12px;}
+#mapSvg{width:100%;height:100%;display:block;cursor:grab;background:
+  radial-gradient(700px 400px at 20% 10%,#0e1a2c 0%, transparent 60%),
+  #0a1120;}
+#mapSvg:active{cursor:grabbing;}
+
+.map-hint{position:absolute;left:12px;top:10px;font-family:var(--font-mono);font-size:10px;color:var(--text-faint2);
+  background:rgba(9,13,22,0.7);padding:5px 9px;border-radius:6px;border:1px solid var(--border-soft);pointer-events:none;z-index:3;}
+.map-legend{position:absolute;right:12px;top:10px;display:flex;gap:10px;background:rgba(9,13,22,0.7);
+  padding:6px 10px;border-radius:6px;border:1px solid var(--border-soft);font-family:var(--font-mono);font-size:10px;z-index:3;}
+.map-legend span{display:flex;align-items:center;gap:5px;color:var(--text-dim);}
+.map-legend i{width:9px;height:3px;border-radius:2px;display:inline-block;}
+
+.tooltip{
+  position:absolute;pointer-events:none;z-index:5;
+  background:#0c1424;border:1px solid var(--border);
+  border-radius:8px;padding:9px 11px;font-family:var(--font-mono);font-size:10.5px;
+  color:var(--text-dim);box-shadow:0 8px 24px rgba(0,0,0,0.4);opacity:0;transition:opacity .1s;min-width:150px;
+}
+.tooltip b{color:var(--text);font-family:var(--font-body);font-size:11.5px;display:block;margin-bottom:4px;}
+.tooltip .t-row{display:flex;justify-content:space-between;gap:14px;margin-top:2px;}
+
+.telemetry-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:13px 15px;}
+.stat-label{font-family:var(--font-mono);font-size:10px;color:var(--text-faint2);letter-spacing:.5px;display:flex;align-items:center;gap:6px;}
+.stat-label svg{width:12px;height:12px;color:var(--cyan-dim);}
+.stat-value{font-family:var(--font-display);font-size:22px;font-weight:600;margin-top:6px;color:var(--text);}
+.stat-foot{font-size:10.5px;color:var(--text-faint2);margin-top:3px;}
+.badge{display:inline-block;font-family:var(--font-mono);font-size:9.5px;padding:2px 7px;border-radius:20px;margin-top:6px;}
+.badge.ok{color:var(--green);background:rgba(61,220,151,0.1);border:1px solid rgba(61,220,151,0.3);}
+.badge.warn{color:var(--amber);background:rgba(242,184,75,0.1);border:1px solid rgba(242,184,75,0.3);}
+
+/* dispatch */
+.field{margin-bottom:12px;}
+.field label{display:block;font-family:var(--font-mono);font-size:10px;color:var(--text-faint2);letter-spacing:.5px;margin-bottom:6px;}
+.field select{
+  width:100%;background:var(--panel-soft);border:1px solid var(--border);
+  color:var(--text);padding:9px 10px;border-radius:8px;font-family:var(--font-body);font-size:12.5px;
+  outline:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238ea0bd'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+}
+.veh-toggle{display:flex;gap:8px;}
+.veh-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:11px 6px;border-radius:9px;border:1px solid var(--border);
+  background:var(--panel-soft);color:var(--text-dim);cursor:pointer;font-size:11.5px;font-weight:500;
+  transition:all .15s;
+}
+.veh-btn svg{width:18px;height:18px;}
+.veh-btn.active{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-soft);box-shadow:0 0 0 1px rgba(45,212,240,0.15) inset;}
+.veh-note{font-family:var(--font-mono);font-size:10px;color:var(--text-faint2);margin-top:8px;}
+
+.btn{
+  width:100%;padding:11px;border-radius:9px;border:none;cursor:pointer;
+  font-family:var(--font-body);font-weight:600;font-size:13px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#0d8ba3);color:#04141a;margin-top:4px;box-shadow:0 6px 20px rgba(45,212,240,0.25);}
+.btn-primary:hover{filter:brightness(1.08);}
+.btn-ghost{background:var(--panel-soft);border:1px solid var(--border);color:var(--text-dim);}
+.btn-ghost:hover{color:var(--text);border-color:#2a3a58;}
+.btn-row{display:flex;gap:8px;margin-top:10px;}
+.btn svg{width:15px;height:15px;}
+
+.route-result{margin-top:14px;border-top:1px solid var(--border-soft);padding-top:12px;}
+.route-ok{display:flex;align-items:center;gap:7px;color:var(--green);font-family:var(--font-mono);font-size:11px;margin-bottom:10px;}
+.route-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.rm{background:var(--panel-soft);border:1px solid var(--border-soft);border-radius:8px;padding:8px 10px;}
+.rm .k{font-family:var(--font-mono);font-size:9px;color:var(--text-faint2);}
+.rm .v{font-size:13px;font-weight:600;margin-top:2px;}
+.route-steps{display:flex;flex-direction:column;gap:0;max-height:180px;overflow:auto;}
+.rstep{display:flex;gap:10px;padding:6px 0;font-size:12px;}
+.rstep .num{width:18px;height:18px;border-radius:50%;background:var(--cyan-soft);color:var(--cyan);
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-family:var(--font-mono);flex:none;margin-top:1px;}
+.rstep .rname{font-weight:500;}
+.rstep .rmeta{font-family:var(--font-mono);font-size:10px;color:var(--text-faint2);margin-top:1px;}
+.rstep-line{width:1px;background:var(--border);margin-left:9px;}
+
+.ops-panel{flex:none;max-height:230px;display:flex;flex-direction:column;}
+.ops-list{flex:1;overflow:auto;padding:8px 16px 14px;display:flex;flex-direction:column;gap:7px;}
+.op-item{display:flex;gap:9px;font-size:11.5px;padding:7px 9px;border-radius:8px;background:var(--panel-soft);border:1px solid var(--border-soft);}
+.op-sev{width:6px;border-radius:3px;flex:none;}
+.op-sev.INFO{background:var(--cyan);}
+.op-sev.WARNING{background:var(--amber);}
+.op-sev.HIGH{background:var(--orange);}
+.op-sev.CRITICAL{background:var(--red);}
+.op-body{flex:1;min-width:0;}
+.op-text{color:var(--text);}
+.op-time{font-family:var(--font-mono);font-size:9.5px;color:var(--text-faint2);margin-top:2px;}
+.op-tag{font-family:var(--font-mono);font-size:8.5px;padding:1px 6px;border-radius:10px;border:1px solid var(--border);color:var(--text-faint2);flex:none;height:16px;}
+
+.scenario-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px;}
+.scn-btn{
+  padding:9px 8px;border-radius:8px;border:1px solid var(--border);background:var(--panel-soft);
+  color:var(--text-dim);font-size:11px;font-weight:500;cursor:pointer;text-align:left;
+}
+.scn-btn small{display:block;font-family:var(--font-mono);font-size:9px;color:var(--text-faint2);margin-top:2px;font-weight:400;}
+.scn-btn:hover{border-color:var(--cyan-dim);color:var(--text);}
+.scn-btn.on{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-soft);}
+
+/* generic table */
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;font-family:var(--font-mono);font-weight:500;font-size:10px;color:var(--text-faint2);
+  letter-spacing:.4px;padding:9px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--panel);}
+td{padding:9px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-dim);vertical-align:middle;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+.tstatus{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10.5px;padding:3px 9px;border-radius:20px;border:1px solid;}
+.tstatus.CLEAR{color:var(--green);border-color:rgba(61,220,151,0.35);background:rgba(61,220,151,0.07);}
+.tstatus.MODERATE{color:var(--amber);border-color:rgba(242,184,75,0.35);background:rgba(242,184,75,0.07);}
+.tstatus.HEAVY{color:var(--orange);border-color:rgba(242,146,75,0.35);background:rgba(242,146,75,0.07);}
+.tstatus.BLOCKED{color:var(--red);border-color:rgba(242,88,107,0.35);background:rgba(242,88,107,0.07);}
+select.mini{background:var(--panel-soft);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 8px;font-size:11px;font-family:var(--font-body);}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.section-lede{color:var(--text-dim);font-size:12.5px;line-height:1.6;max-width:640px;margin:6px 0 16px;}
+h1.page-title{font-family:var(--font-display);font-size:21px;font-weight:600;margin:2px 0 3px;}
+.page-eyebrow{font-family:var(--font-mono);font-size:10px;color:var(--cyan-dim);letter-spacing:1px;}
+.count-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+.count-pill{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);
+  background:var(--panel);border:1px solid var(--border);padding:6px 12px;border-radius:20px;}
+.count-pill b{color:var(--text);font-size:12px;}
+
+.chips{display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap;}
+.chip{font-family:var(--font-mono);font-size:11px;padding:6px 12px;border-radius:20px;border:1px solid var(--border);color:var(--text-dim);display:flex;align-items:center;gap:6px;}
+.chip i{width:8px;height:8px;border-radius:50%;}
+
+.compare-table td.head{color:var(--text);font-weight:600;}
+.compare-table td.yes{color:var(--green);}
+.compare-table td.no{color:var(--red);}
+.compare-table tr.highlight td{background:rgba(45,212,240,0.05);}
+.compare-table tr.highlight td:first-child{border-left:2px solid var(--cyan);}
+
+pre.codeblock{
+  background:#080c15;border:1px solid var(--border);border-radius:10px;
+  padding:16px;font-family:var(--font-mono);font-size:11.5px;line-height:1.65;color:#a9c1de;
+  overflow:auto;max-height:520px;
+}
+pre.codeblock .kw{color:#7fb8f5;} pre.codeblock .cm{color:#516padding;color:#546padding;} pre.codeblock .tp{color:#6bd6a8;}
+.code-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.code-tabs{display:flex;gap:6px;}
+.code-tab{padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:var(--panel-soft);color:var(--text-dim);font-size:12px;cursor:pointer;}
+.code-tab.active{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-soft);}
+.code-actions{display:flex;gap:8px;}
+.icon-btn{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:7px;border:1px solid var(--border);background:var(--panel-soft);color:var(--text-dim);font-size:11.5px;cursor:pointer;}
+.icon-btn svg{width:13px;height:13px;}
+.icon-btn:hover{color:var(--text);}
+
+.log-term{
+  background:#070b12;border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+  font-family:var(--font-mono);font-size:11.5px;line-height:1.75;color:#7fe3c8;max-height:320px;overflow:auto;
+}
+.log-term .lg-tag{color:var(--cyan);}
+.log-term .lg-heap{color:var(--amber);}
+.log-term .lg-res{color:var(--green);}
+.log-term div{white-space:pre-wrap;}
+
+.heap-wrap{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;}
+.heap-array{display:flex;gap:6px;flex-wrap:wrap;max-width:100%;}
+.heap-cell{
+  background:var(--panel-soft);border:1px solid var(--border);border-radius:7px;
+  padding:7px 9px;font-family:var(--font-mono);font-size:10.5px;text-align:center;min-width:56px;
+}
+.heap-cell .hi{color:var(--text-faint2);font-size:9px;}
+.heap-cell .hn{color:var(--cyan);font-weight:600;margin-top:2px;}
+.heap-cell .hd{color:var(--text-dim);margin-top:1px;}
+
+.flow{display:flex;flex-direction:column;align-items:center;gap:0;padding:10px 0;}
+.flow-step{
+  background:var(--panel);border:1px solid var(--border);border-radius:9px;
+  padding:9px 16px;font-size:12px;text-align:center;min-width:230px;color:var(--text-dim);
+}
+.flow-step.hi{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-soft);}
+.flow-step.decision{border-radius:20px;border-color:var(--amber);color:var(--amber);}
+.flow-arrow{color:var(--text-faint2);font-size:13px;padding:3px 0;}
+.flow-branch{display:flex;gap:26px;align-items:flex-start;margin:2px 0;}
+.flow-branch .fb{display:flex;flex-direction:column;align-items:center;}
+.flow-branch .fb small{font-family:var(--font-mono);color:var(--text-faint2);margin-bottom:2px;}
+
+.pseudo-item{border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;background:var(--panel);}
+.pseudo-item summary{padding:11px 15px;cursor:pointer;font-weight:600;font-size:12.5px;list-style:none;display:flex;align-items:center;justify-content:between;gap:8px;}
+.pseudo-item summary::-webkit-details-marker{display:none;}
+.pseudo-item summary:before{content:'▸';color:var(--cyan);margin-right:8px;font-size:11px;}
+.pseudo-item[open] summary:before{content:'▾';}
+.pseudo-item pre{margin:0;padding:0 15px 15px;font-family:var(--font-mono);font-size:11.5px;color:var(--text-dim);line-height:1.7;white-space:pre-wrap;}
+
+.hist-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--border-soft);border-radius:9px;margin-bottom:8px;background:var(--panel-soft);}
+.hist-id{font-family:var(--font-mono);color:var(--text-faint2);font-size:11px;width:44px;flex:none;}
+.hist-veh{width:30px;height:30px;border-radius:8px;background:var(--cyan-soft);display:flex;align-items:center;justify-content:center;flex:none;}
+.hist-veh svg{width:15px;height:15px;color:var(--cyan);}
+.hist-mid{flex:1;min-width:0;}
+.hist-route{font-size:12.5px;font-weight:500;}
+.hist-time{font-family:var(--font-mono);font-size:10px;color:var(--text-faint2);margin-top:2px;}
+.hist-ms{font-family:var(--font-mono);font-size:11px;color:var(--green);width:70px;text-align:right;flex:none;}
+
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border-soft);}
+.settings-row:last-child{border-bottom:none;}
+.settings-label{font-size:13px;font-weight:500;}
+.settings-desc{font-size:11.5px;color:var(--text-faint2);margin-top:2px;max-width:420px;}
+.switch{width:38px;height:21px;border-radius:20px;background:var(--panel-soft);border:1px solid var(--border);position:relative;cursor:pointer;flex:none;}
+.switch.on{background:var(--cyan-dim);border-color:var(--cyan);}
+.switch i{position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#c9d6e5;transition:left .15s;}
+.switch.on i{left:19px;background:#04141a;}
+
+.empty-note{color:var(--text-faint2);font-size:12px;padding:20px;text-align:center;}
+::selection{background:rgba(45,212,240,0.25);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h8l-1 8 10-12h-8z" fill="#04121a" stroke="none"/></svg></div>
+      <div>
+        <div class="brand-name">PulseRoute</div>
+        <div class="brand-sub">EMERGENCY ROUTING</div>
+      </div>
+    </div>
+
+    <div class="nav-group-label">OPERATIONS</div>
+    <div class="nav" id="navOps">
+      <div class="nav-item active" data-page="monitor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l2 8 4-16 2 8h6"/></svg>Monitor</div>
+      <div class="nav-item" data-page="monitor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Dispatch</div>
+      <div class="nav-item" data-page="traffic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="8" cy="18" r="1.4" fill="currentColor" stroke="none"/></svg>Traffic</div>
+      <div class="nav-item" data-page="network"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="6" r="2.2"/><circle cx="19" cy="6" r="2.2"/><circle cx="12" cy="18" r="2.2"/><path d="M7 7l8 9M17 7l-8 9"/></svg>Network</div>
+    </div>
+
+    <div class="nav-group-label">ANALYSIS</div>
+    <div class="nav" id="navAnalysis">
+      <div class="nav-item" data-page="algorithms"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V6a2 2 0 0 1 2-2h9l5 5v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>Algorithms</div>
+      <div class="nav-item" data-page="analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>Analytics</div>
+      <div class="nav-item" data-page="report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M8 12h8M8 16h8"/></svg>Report</div>
+      <div class="nav-item" data-page="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</div>
+    </div>
+
+    <div class="sidebar-foot">
+      <div>SEED <b>42</b> · DETERMINISTIC GRAPH</div>
+      <div>BUILD <b>pulseroute-demo</b></div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="searchBox" placeholder="Search roads, intersections, incidents…">
+      </div>
+      <div class="topbar-right">
+        <div class="pill online"><span class="dot"></span>NETWORK ONLINE</div>
+        <div class="pill" id="graphSizePill">V=0 · E=0</div>
+        <div class="pill clock" id="clockPill">--:--:--</div>
+      </div>
+    </div>
+
+    <div class="pages">
+
+      <!-- MONITOR -->
+      <div class="page active" id="page-monitor">
+        <div class="monitor-grid">
+          <div class="map-col">
+            <div class="panel map-panel">
+              <div class="panel-head">
+                <div class="panel-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/></svg>Live City Network</div>
+                <div class="panel-sub" id="mapMeta">120+ intersections · 250+ roads</div>
+              </div>
+              <div class="panel-body">
+                <div class="map-hint">Scroll to zoom · Drag to pan · Click a road to inspect</div>
+                <div class="map-legend">
+                  <span><i style="background:var(--green)"></i>Clear</span>
+                  <span><i style="background:var(--amber)"></i>Moderate</span>
+                  <span><i style="background:var(--orange)"></i>Heavy</span>
+                  <span><i style="background:var(--red)"></i>Blocked</span>
+                  <span><i style="background:var(--cyan)"></i>Route</span>
+                </div>
+                <svg id="mapSvg" viewBox="0 0 1300 900"></svg>
+                <div class="tooltip" id="tooltip"></div>
+              </div>
+            </div>
+
+            <div class="telemetry-strip">
+              <div class="stat-card">
+                <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>ROUTE DISTANCE</div>
+                <div class="stat-value" id="statDist">—</div>
+                <div class="stat-foot" id="statDistFoot">Traffic-adjusted cost —</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>ESTIMATED ETA</div>
+                <div class="stat-value" id="statEta">—</div>
+                <div class="stat-foot" id="statEtaFoot">Select vehicle &amp; run dispatch</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V6a2 2 0 0 1 2-2h9l5 5v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>NODES / EDGES</div>
+                <div class="stat-value" id="statNodes">—</div>
+                <div class="stat-foot" id="statNodesFoot">visited / relaxed</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h8l-1 8 10-12h-8z"/></svg>QUERY TIME</div>
+                <div class="stat-value" id="statQuery">—</div>
+                <span class="badge ok" id="statQueryBadge" style="display:none">WITHIN TARGET</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="side-col">
+            <div class="panel">
+              <div class="panel-head">
+                <div class="panel-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Dispatch Control</div>
+              </div>
+              <div class="panel-body">
+                <div class="field">
+                  <label>EMERGENCY VEHICLE</label>
+                  <div class="veh-toggle">
+                    <div class="veh-btn active" id="vehAmbulance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17V8a2 2 0 0 1 2-2h6v11M3 17h1m0 0a2 2 0 1 0 4 0m-4 0h9m5 0a2 2 0 1 0 4 0m-4 0h1m0 0V12h-3l-2-3h-2v8"/><path d="M8 8v6M5 11h6"/></svg>Ambulance</div>
+                    <div class="veh-btn" id="vehFire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 2.5c-1 2-1 4 .5 5.5C7 9.5 6 11.5 6 14a6 6 0 0 0 12 0c0-3-1.5-4.5-3-6 .5 2-1 3-2 2 .5-2-.5-3.5-2-4.5.5 1.5-.5 2.5-1.5 1.5.5-1.5 0-3-1-4.5z"/></svg>Fire Engine</div>
+                  </div>
+                  <div class="veh-note" id="vehNote">Ambulance · 62 km/h free-flow · congestion penalty ×1.0</div>
+                </div>
+                <div class="field">
+                  <label>SOURCE INTERSECTION</label>
+                  <select id="srcSelect"></select>
+                </div>
+                <div class="field">
+                  <label>DESTINATION</label>
+                  <select id="dstSelect"></select>
+                </div>
+                <button class="btn btn-primary" id="runBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 4l14 8-14 8z"/></svg>Calculate Optimal Route</button>
+                <div class="btn-row">
+                  <button class="btn btn-ghost" id="clearBtn" style="flex:1">Clear</button>
+                  <button class="btn btn-ghost" id="pickBtn" style="flex:1">Pick on map</button>
+                </div>
+
+                <div class="route-result" id="routeResult" style="display:none">
+                  <div class="route-ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>ROUTE OPTIMIZED</div>
+                  <div class="route-metrics">
+                    <div class="rm"><div class="k">DISTANCE</div><div class="v" id="rmDist">—</div></div>
+                    <div class="rm"><div class="k">EFFECTIVE COST</div><div class="v" id="rmCost">—</div></div>
+                    <div class="rm"><div class="k">ETA</div><div class="v" id="rmEta">—</div></div>
+                    <div class="rm"><div class="k">NODES IN ROUTE</div><div class="v" id="rmNodes">—</div></div>
+                  </div>
+                  <div class="route-steps" id="routeSteps"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel ops-panel">
+              <div class="panel-head">
+                <div class="panel-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Live Operations</div>
+                <div class="panel-sub">real-time feed</div>
+              </div>
+              <div class="ops-list" id="opsList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRAFFIC -->
+      <div class="page" id="page-traffic">
+        <div class="page-eyebrow">TRAFFIC MANAGEMENT</div>
+        <h1 class="page-title">Live road conditions</h1>
+        <p class="section-lede">Every change writes directly into the routing engine's hash map, keyed by road ID. A change is an O(1) update; the current route (if any) is re-solved with a fresh Dijkstra query immediately after.</p>
+
+        <div class="chips" id="trafficChips"></div>
+
+        <div class="two-col" style="align-items:start;">
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Road table</div>
+              <div class="panel-sub" id="roadCountSub">— roads</div>
+            </div>
+            <div class="panel-body" style="padding:0;max-height:560px;overflow:auto;">
+              <table>
+                <thead><tr><th>ROAD</th><th>FROM → TO</th><th>DIST</th><th>EFF. WEIGHT</th><th>TRAFFIC</th></tr></thead>
+                <tbody id="roadTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">Emergency scenarios</div><div class="panel-sub">demo mode</div></div>
+            <div class="panel-body">
+              <p style="color:var(--text-dim);font-size:12px;line-height:1.6;margin-top:0;">Each scenario re-seeds the traffic map, may block roads, and (if a route is active) re-runs Dijkstra so you can watch the path adapt.</p>
+              <div class="scenario-row">
+                <div class="scn-btn" data-scn="NORMAL">Normal<small>Mostly clear roads</small></div>
+                <div class="scn-btn" data-scn="RUSH">Rush Hour<small>Widespread congestion</small></div>
+                <div class="scn-btn" data-scn="BLOCK">Road Block<small>Several roads closed</small></div>
+                <div class="scn-btn" data-scn="SURGE">Emergency Surge<small>Multiple incidents</small></div>
+              </div>
+              <div style="margin-top:18px;border-top:1px solid var(--border-soft);padding-top:14px;">
+                <div class="panel-sub" style="margin-bottom:8px;">MULTIPLIERS</div>
+                <table>
+                  <tr><td>CLEAR</td><td>× 1.0</td></tr>
+                  <tr><td>MODERATE</td><td>× 1.5</td></tr>
+                  <tr><td>HEAVY</td><td>× 2.5</td></tr>
+                  <tr><td>BLOCKED</td><td>unavailable (∞)</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NETWORK -->
+      <div class="page" id="page-network">
+        <div class="page-eyebrow">CITY GRAPH</div>
+        <h1 class="page-title">Network overview</h1>
+        <p class="section-lede">PulseRoute models the city as a weighted, undirected sparse graph — intersections are vertices, roads are edges. The map view renders a legible subset visually; the full graph below is what the routing engine actually queries.</p>
+
+        <div class="telemetry-strip" style="margin-bottom:16px;">
+          <div class="stat-card"><div class="stat-label">INTERSECTIONS</div><div class="stat-value" id="netNodes">—</div><div class="stat-foot">graph vertices |V|</div></div>
+          <div class="stat-card"><div class="stat-label">ROADS</div><div class="stat-value" id="netEdges">—</div><div class="stat-foot">graph edges |E|</div></div>
+          <div class="stat-card"><div class="stat-label">AVG. DEGREE</div><div class="stat-value" id="netDegree">—</div><div class="stat-foot">2|E| / |V|</div></div>
+          <div class="stat-card"><div class="stat-label">GRAPH DENSITY</div><div class="stat-value" id="netDensity">—</div><div class="stat-foot">|E| / max possible</div></div>
+        </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">Structure</div></div>
+            <div class="panel-body">
+              <table>
+                <tr><td>Representation</td><td class="head">Adjacency list</td></tr>
+                <tr><td>Connected components</td><td class="head" id="netComponents">1</td></tr>
+                <tr><td>Graph type</td><td class="head">Weighted, undirected, sparse</td></tr>
+                <tr><td>Generation</td><td class="head">Deterministic (seed 42)</td></tr>
+                <tr><td>Weight source</td><td class="head">Base distance × traffic multiplier</td></tr>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">Traffic distribution</div></div>
+            <div class="panel-body">
+              <div id="netTrafficBars"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:16px;">
+          <div class="panel-head"><div class="panel-title">Graph preview</div><div class="panel-sub">structural render — not to map scale</div></div>
+          <div class="panel-body" style="padding:0;">
+            <svg id="netSvg" viewBox="0 0 1300 620" style="width:100%;height:460px;display:block;background:#0a0f1a;"></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALGORITHMS -->
+      <div class="page" id="page-algorithms">
+        <div class="page-eyebrow">WHY DIJKSTRA + MIN-HEAP</div>
+        <h1 class="page-title">Routing algorithm</h1>
+        <p class="section-lede">Roads carry positive, dynamically-changing weights. That combination — weighted, non-negative, frequently updated — is exactly the case Dijkstra's algorithm with a binary min-heap is built for.</p>
+
+        <div class="code-tabs" style="margin-bottom:16px;">
+          <div class="code-tab active" data-algtab="compare">Comparison</div>
+          <div class="code-tab" data-algtab="heap">Min-Heap Visualizer</div>
+          <div class="code-tab" data-algtab="log">Dijkstra Live Log</div>
+          <div class="code-tab" data-algtab="flow">Flowchart</div>
+          <div class="code-tab" data-algtab="pseudo">Pseudocode</div>
+          <div class="code-tab" data-algtab="csource">C Source</div>
+        </div>
+
+        <div class="alg-panel" id="alg-compare">
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">Algorithm comparison</div></div>
+            <div class="panel-body" style="padding:0;">
+              <table class="compare-table">
+                <thead><tr><th></th><th>WEIGHTED?</th><th>SPARSE-FRIENDLY?</th><th>DYNAMIC TRAFFIC?</th><th>MEMORY</th><th>TIME COMPLEXITY</th><th>SUITABLE?</th></tr></thead>
+                <tbody>
+                  <tr><td class="head">BFS</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td><td>O(V + E)</td><td>O(V + E)</td><td class="no">Not suitable</td></tr>
+                  <tr class="highlight"><td class="head">Dijkstra + Min-Heap</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td>O(V + E)</td><td>O((V+E) log V)</td><td class="yes">Best fit</td></tr>
+                  <tr><td class="head">Floyd-Warshall</td><td class="yes">Yes</td><td class="no">No</td><td class="no">Costly</td><td>O(V²)</td><td>O(V³)</td><td class="no">Not suitable</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="two-col" style="margin-top:16px;">
+            <div class="panel">
+              <div class="panel-head"><div class="panel-title">Adjacency list vs. matrix</div></div>
+              <div class="panel-body" style="padding:0;">
+                <table class="compare-table">
+                  <thead><tr><th></th><th>MEMORY</th><th>EDGE LOOKUP</th><th>ITERATE NEIGHBORS</th></tr></thead>
+                  <tbody>
+                    <tr class="highlight"><td class="head">Adjacency list</td><td>O(V + E)</td><td>O(deg(v))</td><td>O(deg(v))</td></tr>
+                    <tr><td class="head">Adjacency matrix</td><td>O(V²)</td><td>O(1)</td><td>O(V)</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><div class="panel-title">Complexity reference</div></div>
+              <div class="panel-body">
+                <table>
+                  <tr><td>Dijkstra + binary min-heap</td><td class="head">O((V + E) log V)</td></tr>
+                  <tr><td>Adjacency list build</td><td class="head">O(V + E)</td></tr>
+                  <tr><td>HashMap update (traffic)</td><td class="head">O(1) avg</td></tr>
+                  <tr><td>HashSet lookup (visited)</td><td class="head">O(1) avg</td></tr>
+                  <tr><td>Floyd-Warshall</td><td class="head">O(V³)</td></tr>
+                  <tr><td>BFS</td><td class="head">O(V + E)</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-top:16px;">
+            <div class="panel-head"><div class="panel-title">Why not the alternatives</div></div>
+            <div class="panel-body">
+              <p style="color:var(--text-dim);font-size:12.5px;line-height:1.7;"><b style="color:var(--text)">BFS</b> finds the fewest hops, not the shortest weighted distance — with road lengths and traffic penalties differing per edge, a low hop-count route can easily be the slower one.<br><br>
+              <b style="color:var(--text)">Floyd-Warshall</b> solves all-pairs shortest paths in O(V³), which recomputes routes nobody asked for. For single dispatch queries on a sparse ~130-node city graph that's wasted work; Dijkstra answers one query in O((V+E) log V).<br><br>
+              <b style="color:var(--text)">Adjacency lists</b> only store edges that exist. On a sparse graph like this one (each intersection touches roughly 4 roads, not 129), a matrix would allocate 129× more cells than needed.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="alg-panel" id="alg-heap" style="display:none;">
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">Binary Min-Heap</div><div class="panel-sub">snapshot after the last dispatch query</div></div>
+            <div class="panel-body">
+              <p style="color:var(--text-dim);font-size:12px;margin-top:0;">insert() · extractMin() · decreaseKey() — run Calculate Optimal Route on Monitor to populate a live snapshot.</p>
+              <div class="heap-wrap">
+                <div style="flex:1;min-width:320px;">
+                  <svg id="heapTreeSvg" viewBox="0 0 560 240" style="width:100%;height:220px;"></svg>
+                </div>
+                <div style="flex:1;min-width:280px;">
+                  <div class="panel-sub" style="margin-bottom:8px;">HEAP ARRAY</div>
+                  <div class="heap-array" id="heapArray"></div>
+                  <div class="panel-sub" style="margin:14px 0 8px;">POSITION[] (first 8)</div>
+                  <div class="heap-array" id="posArray"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alg-panel" id="alg-log" style="display:none;">
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">Dijkstra execution log</div><div class="panel-sub" id="logMeta">no query run yet</div></div>
+            <div class="panel-body">
+              <div class="log-term" id="dijkstraLog"><div style="color:var(--text-faint2)">Run a dispatch query on the Monitor page to populate this log with real algorithm events.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alg-panel" id="alg-flow" style="display:none;">
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">Routing flow</div></div>
+            <div class="panel-body">
+              <div class="flow">
+                <div class="flow-step hi">START</div><div class="flow-arrow">↓</div>
+                <div class="flow-step">Load city graph</div><div class="flow-arrow">↓</div>
+                <div class="flow-step">Select emergency vehicle</div><div class="flow-arrow">↓</div>
+                <div class="flow-step">Select source &amp; destination</div><div class="flow-arrow">↓</div>
+                <div class="flow-step">Load traffic conditions</div><div class="flow-arrow">↓</div>
+                <div class="flow-step">Initialize distances = ∞, dist[source] = 0</div><div class="flow-arrow">↓</div>
+                <div class="flow-step">Initialize min-heap, insert(source, 0)</div><div class="flow-arrow">↓</div>
+                <div class="flow-step decision">Heap empty?</div>
+                <div class="flow-branch">
+                  <div class="fb"><small>NO</small><div class="flow-step">Extract minimum node</div></div>
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">Mark node visited · check adjacent roads</div><div class="flow-arrow">↓</div>
+                <div class="flow-step decision">Road blocked?</div>
+                <div class="flow-branch">
+                  <div class="fb"><small>YES</small><div class="flow-step">Skip road</div></div>
+                  <div class="fb"><small>NO</small><div class="flow-step">Compute effective weight</div></div>
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step decision">Relax edge — shorter path found?</div>
+                <div class="flow-branch">
+                  <div class="fb"><small>YES</small><div class="flow-step">Update distance + parent, decreaseKey()</div></div>
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step decision">Destination reached?</div>
+                <div class="flow-branch">
+                  <div class="fb"><small>YES</small><div class="flow-step">Reconstruct path via parent[]</div></div>
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">Animate emergency vehicle along route</div><div class="flow-arrow">↓</div>
+                <div class="flow-step hi">END</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alg-panel" id="alg-pseudo" style="display:none;"></div>
+        <div class="alg-panel" id="alg-csource" style="display:none;"></div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div class="page" id="page-analytics">
+        <div class="page-eyebrow">SYSTEM ANALYTICS</div>
+        <h1 class="page-title">Algorithm telemetry</h1>
+        <p class="section-lede">Metrics from the most recent Dijkstra execution, measured with <code style="color:var(--cyan)">performance.now()</code>. Nothing here is fabricated — every number reflects the actual query.</p>
+        <div class="telemetry-strip" id="analyticsStrip"></div>
+
+        <div class="panel" style="margin-top:16px;">
+          <div class="panel-head"><div class="panel-title">Query performance</div><div class="panel-sub">target &lt; 200 ms</div></div>
+          <div class="panel-body">
+            <div id="perfHistory" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORT -->
+      <div class="page" id="page-report">
+        <div class="page-eyebrow">DISPATCH LOG</div>
+        <h1 class="page-title">Route history</h1>
+        <p class="section-lede">Every calculated dispatch is recorded here — the graph and traffic state persist across queries, nothing resets between runs.</p>
+        <div style="display:flex;gap:10px;margin-bottom:16px;">
+          <button class="btn btn-ghost" style="width:auto;padding:9px 16px;" onclick="window.print()">Print report</button>
+          <button class="btn btn-ghost" style="width:auto;padding:9px 16px;" id="clearHistBtn">Clear history</button>
+        </div>
+        <div id="historyList"></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="page-settings">
+        <div class="page-eyebrow">SYSTEM</div>
+        <h1 class="page-title">Settings</h1>
+        <div class="panel">
+          <div class="panel-body">
+            <div class="settings-row">
+              <div><div class="settings-label">Vehicle animation</div><div class="settings-desc">Animate the emergency vehicle marker moving along the calculated route.</div></div>
+              <div class="switch on" id="toggleAnim"><i></i></div>
+            </div>
+            <div class="settings-row">
+              <div><div class="settings-label">Distance unit</div><div class="settings-desc">Display road and route distances in kilometres or miles.</div></div>
+              <select class="mini" id="unitSelect"><option value="km">Kilometres</option><option value="mi">Miles</option></select>
+            </div>
+            <div class="settings-row">
+              <div><div class="settings-label">Reset simulation</div><div class="settings-desc">Reload the deterministic graph, clear traffic overrides and route history.</div></div>
+              <button class="btn btn-ghost" style="width:auto;padding:8px 16px;" id="resetSimBtn">Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================= PRNG ============================= */
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rand = mulberry32(42);
+
+/* ============================= GRAPH GENERATION ============================= */
+const COLS = 13, ROWS = 10;
+const MARGIN_X = 70, MARGIN_Y = 70;
+const SPAN_X = 1160, SPAN_Y = 760;
+
+const LANDMARKS = {
+  14:{name:"Fire Station Alpha", type:"fire"},
+  101:{name:"Fire Station Bravo", type:"fire"},
+  54:{name:"Central Hospital", type:"hospital"},
+  35:{name:"City General Hospital", type:"hospital"},
+  107:{name:"St. Mary Trauma Center", type:"hospital"},
+  74:{name:"Emergency Zone — Stadium Interchange", type:"zone"},
+  115:{name:"Industrial Area", type:"zone"},
+  45:{name:"Metro Depot", type:"zone"},
+  58:{name:"Central Command", type:"zone"},
+  18:{name:"Old Town Circle", type:"zone"},
+  6:{name:"Riverside Junction", type:"zone"},
+  31:{name:"Market Square", type:"zone"},
+  65:{name:"Harbour District", type:"zone"},
+  66:{name:"Harbour Bridge Approach", type:"zone"},
+  122:{name:"Southgate Terminal", type:"zone"}
+};
+
+const nodes = [];
+for(let r=0;r<ROWS;r++){
+  for(let c=0;c<COLS;c++){
+    const id = r*COLS+c;
+    const jx = (rand()-0.5)*26;
+    const jy = (rand()-0.5)*22;
+    const x = MARGIN_X + (c/(COLS-1))*SPAN_X + jx;
+    const y = MARGIN_Y + (r/(ROWS-1))*SPAN_Y + jy;
+    const lm = LANDMARKS[id];
+    nodes.push({id, r, c, x, y, name: lm ? lm.name : ("N-"+String(id).padStart(3,"0")), type: lm ? lm.type : "junction"});
+  }
+}
+function nid(r,c){ return r*COLS+c; }
+function distOf(a,b){
+  const A=nodes[a], B=nodes[b];
+  const d = Math.hypot(A.x-B.x, A.y-B.y)/24;
+  return Math.max(1.1, Math.round(d*10)/10);
+}
+
+const edges = [];
+const edgeIndex = {}; // "a-b" -> edgeId
+function addEdge(a,b){
+  const key = a<b ? a+"-"+b : b+"-"+a;
+  if(edgeIndex[key]!==undefined) return;
+  const id = "R"+String(edges.length+1).padStart(3,"0");
+  const e = {id, a, b, dist: distOf(a,b)};
+  edgeIndex[key] = edges.length;
+  edges.push(e);
+}
+// horizontal + vertical grid edges (guarantees full connectivity)
+for(let r=0;r<ROWS;r++){
+  for(let c=0;c<COLS-1;c++) addEdge(nid(r,c), nid(r,c+1));
+}
+for(let c=0;c<COLS;c++){
+  for(let r=0;r<ROWS-1;r++) addEdge(nid(r,c), nid(r+1,c));
+}
+// organic diagonal shortcuts
+for(let r=0;r<ROWS-1;r++){
+  for(let c=0;c<COLS-1;c++){
+    if(rand() < 0.34){
+      if(rand() < 0.5) addEdge(nid(r,c), nid(r+1,c+1));
+      else addEdge(nid(r,c+1), nid(r+1,c));
+    }
+  }
+}
+// a handful of long "avenue" bypass edges for realism
+for(let i=0;i<14;i++){
+  const r = Math.floor(rand()*ROWS);
+  const c1 = Math.floor(rand()*(COLS-4));
+  addEdge(nid(r,c1), nid(r, Math.min(COLS-1,c1+3)));
+}
+
+/* adjacency list */
+const adj = {}; // nodeId -> [{edgeIdx, to}]
+nodes.forEach(n=> adj[n.id]=[]);
+edges.forEach((e,idx)=>{
+  adj[e.a].push({edgeIdx:idx, to:e.b});
+  adj[e.b].push({edgeIdx:idx, to:e.a});
+});
+
+/* traffic hashmap: edgeId -> condition */
+const MULT = {CLEAR:1.0, MODERATE:1.5, HEAVY:2.5, BLOCKED:Infinity};
+const traffic = {};
+function seedTraffic(){
+  edges.forEach(e=>{
+    const rr = rand();
+    traffic[e.id] = rr < 0.78 ? "CLEAR" : (rr < 0.93 ? "MODERATE" : "HEAVY");
+  });
+}
+seedTraffic();
+
+function effWeight(e){
+  const t = traffic[e.id];
+  if(t==="BLOCKED") return Infinity;
+  return Math.round(e.dist * MULT[t] * 10)/10;
+}
+
+/* ============================= MIN-HEAP ============================= */
+class MinHeap{
+  constructor(){ this.heap=[]; this.pos={}; }
+  size(){ return this.heap.length; }
+  isEmpty(){ return this.heap.length===0; }
+  contains(node){ return this.pos[node]!==undefined; }
+  _swap(i,j){
+    const h=this.heap;
+    [h[i],h[j]]=[h[j],h[i]];
+    this.pos[h[i].node]=i; this.pos[h[j].node]=j;
+  }
+  _up(i){
+    while(i>0){
+      const p=(i-1)>>1;
+      if(this.heap[p].dist <= this.heap[i].dist) break;
+      this._swap(p,i); i=p;
+    }
+  }
+  _down(i){
+    const n=this.heap.length;
+    while(true){
+      let l=2*i+1,r=2*i+2,s=i;
+      if(l<n && this.heap[l].dist<this.heap[s].dist) s=l;
+      if(r<n && this.heap[r].dist<this.heap[s].dist) s=r;
+      if(s===i) break;
+      this._swap(i,s); i=s;
+    }
+  }
+  insert(node,dist){
+    this.heap.push({node,dist});
+    this.pos[node]=this.heap.length-1;
+    this._up(this.heap.length-1);
+  }
+  extractMin(){
+    const h=this.heap;
+    const top=h[0];
+    const last=h.pop();
+    delete this.pos[top.node];
+    if(h.length>0){
+      h[0]=last; this.pos[last.node]=0; this._down(0);
+    }
+    return top;
+  }
+  decreaseKey(node,newDist){
+    const i=this.pos[node];
+    if(i===undefined) return;
+    this.heap[i].dist=newDist;
+    this._up(i);
+  }
+  snapshot(){ return this.heap.map(h=>({node:h.node,dist:h.dist})); }
+}
+
+/* ============================= DIJKSTRA ============================= */
+function runDijkstra(source, dest){
+  const log = [];
+  const t0 = performance.now();
+  const dist = {}, parent = {}, visited = {};
+  nodes.forEach(n=> dist[n.id]=Infinity);
+  dist[source]=0;
+  const heap = new MinHeap();
+  heap.insert(source,0);
+  const metrics = {heapInsertions:1, heapExtractions:0, decreaseKeyOps:0, edgesRelaxed:0, nodesVisited:0};
+  log.push({tag:"DIJKSTRA", text:"Starting from "+nodeName(source)});
+  log.push({tag:"HEAP", text:"insert("+nodeName(source)+", 0.0)"});
+  let heapSnapshotEarly = null;
+  let found = false;
+
+  while(!heap.isEmpty()){
+    const {node:u, dist:ud} = heap.extractMin();
+    metrics.heapExtractions++;
+    log.push({tag:"HEAP", text:"extractMin() → "+nodeName(u)+" (dist "+ud.toFixed(1)+")"});
+    if(heapSnapshotEarly===null && heap.size()>0) heapSnapshotEarly = heap.snapshot().concat([{node:u,dist:ud}]);
+    if(visited[u]) continue;
+    visited[u]=true;
+    metrics.nodesVisited++;
+    log.push({tag:"DIJKSTRA", text:"visit "+nodeName(u)});
+    if(u===dest){ found=true; log.push({tag:"RESULT", text:"Destination reached — optimal route found"}); break; }
+
+    for(const {edgeIdx, to} of adj[u]){
+      const e = edges[edgeIdx];
+      const w = effWeight(e);
+      if(w===Infinity) continue; // blocked road ignored entirely
+      const cand = dist[u] + w;
+      log.push({tag:"RELAX", text:e.id+": "+nodeName(u)+" → "+nodeName(to)+" (w="+w.toFixed(1)+")"});
+      if(cand < dist[to]){
+        dist[to]=cand; parent[to]=u;
+        metrics.edgesRelaxed++;
+        if(heap.contains(to)){
+          heap.decreaseKey(to,cand);
+          metrics.decreaseKeyOps++;
+          log.push({tag:"HEAP", text:"decreaseKey("+nodeName(to)+" → "+cand.toFixed(1)+")"});
+        } else {
+          heap.insert(to,cand);
+          metrics.heapInsertions++;
+          log.push({tag:"HEAP", text:"insert("+nodeName(to)+", "+cand.toFixed(1)+")"});
+        }
+      }
+    }
+  }
+  const t1 = performance.now();
+
+  let path=[];
+  if(found || dist[dest]<Infinity){
+    let cur=dest;
+    while(cur!==undefined){ path.unshift(cur); if(cur===source) break; cur=parent[cur]; }
+    if(path[0]!==source) path=[];
+  }
+  return {dist, parent, path, metrics, log, ms:t1-t0, found: path.length>0, heapSnapshotEarly};
+}
+function nodeName(id){ return nodes[id].name.startsWith("N-") ? nodes[id].name : nodes[id].name; }
+
+/* ============================= STATE ============================= */
+let currentVehicle = "ambulance";
+let currentSource = 14, currentDest = 54;
+let lastRun = null;
+let opsLog = [];
+let historyLog = [];
+let animEnabled = true;
+let currentScenario = "NORMAL";
+
+const VEH_INFO = {
+  ambulance:{speed:62, penalty:1.0, label:"Ambulance"},
+  fire:{speed:52, penalty:1.15, label:"Fire Engine"}
+};
+
+/* ============================= UI: NAV ============================= */
+document.querySelectorAll(".nav-item").forEach(item=>{
+  item.addEventListener("click",()=>{
+    document.querySelectorAll(".nav-item").forEach(i=>i.classList.remove("active"));
+    item.classList.add("active");
+    const page = item.dataset.page;
+    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+    document.getElementById("page-"+page).classList.add("active");
+    if(page==="traffic") renderTrafficPage();
+    if(page==="network") renderNetworkPage();
+    if(page==="analytics") renderAnalyticsPage();
+    if(page==="report") renderReportPage();
+  });
+});
+
+/* ============================= CLOCK ============================= */
+function tickClock(){
+  const d = new Date();
+  document.getElementById("clockPill").textContent = d.toLocaleTimeString([], {hour12:false});
+}
+setInterval(tickClock,1000); tickClock();
+document.getElementById("graphSizePill").textContent = "V="+nodes.length+" · E="+edges.length;
+document.getElementById("mapMeta").textContent = nodes.length+" intersections · "+edges.length+" roads";
+
+/* ============================= LIVE OPS ============================= */
+function pushOp(text, sev){
+  sev = sev || "INFO";
+  const time = new Date().toLocaleTimeString([], {hour12:false});
+  opsLog.unshift({text, sev, time});
+  if(opsLog.length>40) opsLog.pop();
+  renderOps();
+}
+function renderOps(){
+  const el = document.getElementById("opsList");
+  el.innerHTML = opsLog.map(o=>
+    '<div class="op-item"><div class="op-sev '+o.sev+'"></div><div class="op-body"><div class="op-text">'+esc(o.text)+'</div><div class="op-time">'+o.time+'</div></div><div class="op-tag">'+o.sev+'</div></div>'
+  ).join("");
+}
+function esc(s){ return String(s).replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+/* ============================= MAP RENDER ============================= */
+const svgNS = "http://www.w3.org/2000/svg";
+const mapSvg = document.getElementById("mapSvg");
+let mapView = {scale:1, tx:0, ty:0};
+const roadEls = {}, nodeEls = {};
+
+function statusColor(status){
+  return status==="CLEAR" ? "var(--green)" : status==="MODERATE" ? "var(--amber)" : status==="HEAVY" ? "var(--orange)" : "var(--red)";
+}
+
+function buildMap(){
+  mapSvg.innerHTML = "";
+  const g = document.createElementNS(svgNS,"g");
+  g.setAttribute("id","mapG");
+  mapSvg.appendChild(g);
+
+  // subtle city blocks
+  const blockLayer = document.createElementNS(svgNS,"g");
+  g.appendChild(blockLayer);
+  for(let i=0;i<70;i++){
+    const rx = 40+rand()*1220, ry=40+rand()*820;
+    const w = 18+rand()*40, h = 14+rand()*30;
+    const rect = document.createElementNS(svgNS,"rect");
+    rect.setAttribute("x",rx); rect.setAttribute("y",ry);
+    rect.setAttribute("width",w); rect.setAttribute("height",h);
+    rect.setAttribute("rx",3);
+    rect.setAttribute("fill","#0f1626");
+    rect.setAttribute("stroke","#182238");
+    rect.setAttribute("stroke-width","1");
+    blockLayer.appendChild(rect);
+  }
+
+  // roads
+  const roadLayer = document.createElementNS(svgNS,"g");
+  g.appendChild(roadLayer);
+  edges.forEach(e=>{
+    const A=nodes[e.a], B=nodes[e.b];
+    const line = document.createElementNS(svgNS,"line");
+    line.setAttribute("x1",A.x); line.setAttribute("y1",A.y);
+    line.setAttribute("x2",B.x); line.setAttribute("y2",B.y);
+    line.setAttribute("stroke", statusColor(traffic[e.id]));
+    line.setAttribute("stroke-width", 2.2);
+    line.setAttribute("stroke-linecap","round");
+    line.setAttribute("opacity",0.85);
+    line.style.cursor="pointer";
+    line.addEventListener("mousemove",(ev)=>showTooltip(ev,e));
+    line.addEventListener("mouseleave",hideTooltip);
+    line.addEventListener("click",()=>cycleTraffic(e.id));
+    roadLayer.appendChild(line);
+    roadEls[e.id]=line;
+  });
+
+  // route layer (drawn above roads)
+  const routeLayer = document.createElementNS(svgNS,"g");
+  routeLayer.setAttribute("id","routeLayer");
+  g.appendChild(routeLayer);
+
+  // nodes
+  const nodeLayer = document.createElementNS(svgNS,"g");
+  g.appendChild(nodeLayer);
+  nodes.forEach(n=>{
+    const isLandmark = n.type!=="junction";
+    const c = document.createElementNS(svgNS,"circle");
+    c.setAttribute("cx",n.x); c.setAttribute("cy",n.y);
+    c.setAttribute("r", isLandmark?7:3.1);
+    c.setAttribute("fill", isLandmark ? landmarkColor(n.type) : "#2c3c5c");
+    c.setAttribute("stroke", isLandmark ? "#04121a" : "none");
+    c.setAttribute("stroke-width","1.5");
+    c.style.cursor="pointer";
+    c.addEventListener("click",()=>pickNode(n.id));
+    c.addEventListener("mousemove",(ev)=>showNodeTooltip(ev,n));
+    c.addEventListener("mouseleave",hideTooltip);
+    nodeLayer.appendChild(c);
+    nodeEls[n.id]=c;
+    if(isLandmark){
+      const t = document.createElementNS(svgNS,"text");
+      t.setAttribute("x",n.x+10); t.setAttribute("y",n.y+4);
+      t.setAttribute("font-size","10.5"); t.setAttribute("font-family","JetBrains Mono, monospace");
+      t.setAttribute("fill","#9fb0c9");
+      t.textContent = n.name;
+      nodeLayer.appendChild(t);
+    }
+  });
+
+  applyMapTransform();
+}
+function landmarkColor(type){
+  if(type==="hospital") return "#f2586b";
+  if(type==="fire") return "#f2924b";
+  return "#2dd4f0";
+}
+
+function applyMapTransform(){
+  const g = document.getElementById("mapG");
+  if(g) g.setAttribute("transform","translate("+mapView.tx+","+mapView.ty+") scale("+mapView.scale+")");
+}
+mapSvg.addEventListener("wheel",(ev)=>{
+  ev.preventDefault();
+  const delta = ev.deltaY>0 ? 0.9 : 1.1;
+  mapView.scale = Math.min(3.2, Math.max(0.5, mapView.scale*delta));
+  applyMapTransform();
+},{passive:false});
+let dragging=false, dragStart=null;
+mapSvg.addEventListener("mousedown",(ev)=>{ dragging=true; dragStart={x:ev.clientX,y:ev.clientY,tx:mapView.tx,ty:mapView.ty}; });
+window.addEventListener("mousemove",(ev)=>{
+  if(!dragging) return;
+  mapView.tx = dragStart.tx + (ev.clientX-dragStart.x);
+  mapView.ty = dragStart.ty + (ev.clientY-dragStart.y);
+  applyMapTransform();
+});
+window.addEventListener("mouseup",()=>dragging=false);
+
+const tooltip = document.getElementById("tooltip");
+function showTooltip(ev, e){
+  const rect = mapSvg.getBoundingClientRect();
+  tooltip.style.left = (ev.clientX-rect.left+14)+"px";
+  tooltip.style.top = (ev.clientY-rect.top+10)+"px";
+  tooltip.style.opacity = 1;
+  const w = effWeight(e);
+  tooltip.innerHTML = "<b>"+e.id+"</b>"+
+    "<div class='t-row'><span>"+nodes[e.a].name+"</span><span>→</span><span>"+nodes[e.b].name+"</span></div>"+
+    "<div class='t-row'><span>Base distance</span><span>"+e.dist.toFixed(1)+" km</span></div>"+
+    "<div class='t-row'><span>Traffic</span><span>"+traffic[e.id]+"</span></div>"+
+    "<div class='t-row'><span>Effective weight</span><span>"+(w===Infinity?"∞":w.toFixed(1))+"</span></div>"+
+    "<div class='t-row' style='color:var(--text-faint2)'><span>click road to cycle traffic</span></div>";
+}
+function showNodeTooltip(ev,n){
+  const rect = mapSvg.getBoundingClientRect();
+  tooltip.style.left = (ev.clientX-rect.left+14)+"px";
+  tooltip.style.top = (ev.clientY-rect.top+10)+"px";
+  tooltip.style.opacity = 1;
+  tooltip.innerHTML = "<b>"+n.name+"</b><div class='t-row'><span>Node ID</span><span>N-"+String(n.id).padStart(3,"0")+"</span></div><div class='t-row' style='color:var(--text-faint2)'><span>click to set source/destination</span></div>";
+}
+function hideTooltip(){ tooltip.style.opacity=0; }
+
+function cycleTraffic(edgeId){
+  const order = ["CLEAR","MODERATE","HEAVY","BLOCKED"];
+  const cur = order.indexOf(traffic[edgeId]);
+  traffic[edgeId] = order[(cur+1)%order.length];
+  refreshRoadColor(edgeId);
+  pushOp("Traffic updated on "+edgeId+" → "+traffic[edgeId], traffic[edgeId]==="BLOCKED"?"HIGH":"INFO");
+  if(lastRun) doRun(true);
+  renderTrafficPage();
+  renderNetworkStatsIfVisible();
+}
+function refreshRoadColor(edgeId){
+  const el = roadEls[edgeId];
+  if(el) el.setAttribute("stroke", statusColor(traffic[edgeId]));
+}
+
+let pickMode=null;
+function pickNode(id){
+  if(pickMode==="src"){ currentSource=id; document.getElementById("srcSelect").value=id; pickMode=null; }
+  else if(pickMode==="dst"){ currentDest=id; document.getElementById("dstSelect").value=id; pickMode=null; }
+  else {
+    currentSource=id; document.getElementById("srcSelect").value = id;
+  }
+}
+document.getElementById("pickBtn").addEventListener("click",()=>{
+  pickMode="src";
+  pushOp("Click the map to set the source intersection","INFO");
+});
+
+/* ============================= ROUTE ANIMATION ============================= */
+let vehicleEl=null, animFrame=null;
+function clearRouteLayer(){
+  const rl = document.getElementById("routeLayer");
+  if(rl) rl.innerHTML="";
+}
+function drawRoute(path){
+  clearRouteLayer();
+  const rl = document.getElementById("routeLayer");
+  if(path.length<2) return;
+  let points = path.map(id=>nodes[id]).map(n=>n.x+","+n.y).join(" ");
+  const poly = document.createElementNS(svgNS,"polyline");
+  poly.setAttribute("points",points);
+  poly.setAttribute("fill","none");
+  poly.setAttribute("stroke","#2dd4f0");
+  poly.setAttribute("stroke-width","5");
+  poly.setAttribute("stroke-linecap","round");
+  poly.setAttribute("stroke-linejoin","round");
+  poly.setAttribute("opacity","0.95");
+  poly.style.filter = "drop-shadow(0 0 6px rgba(45,212,240,0.9))";
+  const len = poly.getTotalLength ? null : null;
+  rl.appendChild(poly);
+
+  // endpoints
+  [path[0],path[path.length-1]].forEach((id,i)=>{
+    const n = nodes[id];
+    const c = document.createElementNS(svgNS,"circle");
+    c.setAttribute("cx",n.x); c.setAttribute("cy",n.y); c.setAttribute("r",10);
+    c.setAttribute("fill","none"); c.setAttribute("stroke", i===0?"#3ddc97":"#f2586b");
+    c.setAttribute("stroke-width","2.5");
+    rl.appendChild(c);
+  });
+
+  // vehicle marker
+  vehicleEl = document.createElementNS(svgNS,"circle");
+  vehicleEl.setAttribute("r",6.5);
+  vehicleEl.setAttribute("fill","#fff");
+  vehicleEl.setAttribute("stroke","#2dd4f0");
+  vehicleEl.setAttribute("stroke-width","3");
+  vehicleEl.style.filter="drop-shadow(0 0 8px rgba(45,212,240,1))";
+  rl.appendChild(vehicleEl);
+
+  if(animEnabled) animateVehicle(path);
+  else { const n=nodes[path[path.length-1]]; vehicleEl.setAttribute("cx",n.x); vehicleEl.setAttribute("cy",n.y); }
+}
+function animateVehicle(path){
+  if(animFrame) cancelAnimationFrame(animFrame);
+  const pts = path.map(id=>nodes[id]);
+  const segLens=[]; let total=0;
+  for(let i=0;i<pts.length-1;i++){ const d=Math.hypot(pts[i+1].x-pts[i].x, pts[i+1].y-pts[i].y); segLens.push(d); total+=d; }
+  const DURATION = Math.min(4200, Math.max(1400, total*4));
+  const start = performance.now();
+  function frame(now){
+    const t = Math.min(1,(now-start)/DURATION);
+    const target = t*total;
+    let acc=0, seg=0;
+    for(;seg<segLens.length;seg++){ if(acc+segLens[seg]>=target) break; acc+=segLens[seg]; }
+    seg = Math.min(seg, segLens.length-1);
+    const segT = segLens[seg]>0 ? (target-acc)/segLens[seg] : 0;
+    const A=pts[seg], B=pts[seg+1]||pts[seg];
+    const x = A.x+(B.x-A.x)*segT, y=A.y+(B.y-A.y)*segT;
+    vehicleEl.setAttribute("cx",x); vehicleEl.setAttribute("cy",y);
+    if(t<1) animFrame=requestAnimationFrame(frame);
+  }
+  animFrame=requestAnimationFrame(frame);
+}
+
+/* ============================= DISPATCH FORM ============================= */
+const srcSelect = document.getElementById("srcSelect");
+const dstSelect = document.getElementById("dstSelect");
+function fillSelects(){
+  const opts = nodes.filter(n=>n.type!=="junction").concat(nodes.filter(n=>n.type==="junction").slice(0,0));
+  const html = nodes.map(n=>'<option value="'+n.id+'">'+esc(n.name)+'</option>').join("");
+  srcSelect.innerHTML = html; dstSelect.innerHTML = html;
+  srcSelect.value = currentSource; dstSelect.value = currentDest;
+}
+fillSelects();
+srcSelect.addEventListener("change",()=>currentSource=+srcSelect.value);
+dstSelect.addEventListener("change",()=>currentDest=+dstSelect.value);
+
+document.getElementById("vehAmbulance").addEventListener("click",()=>selectVehicle("ambulance"));
+document.getElementById("vehFire").addEventListener("click",()=>selectVehicle("fire"));
+function selectVehicle(v){
+  currentVehicle=v;
+  document.getElementById("vehAmbulance").classList.toggle("active", v==="ambulance");
+  document.getElementById("vehFire").classList.toggle("active", v==="fire");
+  const info = VEH_INFO[v];
+  document.getElementById("vehNote").textContent = info.label+" · "+info.speed+" km/h free-flow · congestion penalty ×"+info.penalty.toFixed(2);
+}
+
+document.getElementById("runBtn").addEventListener("click",()=>doRun(false));
+document.getElementById("clearBtn").addEventListener("click",()=>{
+  clearRouteLayer(); lastRun=null;
+  document.getElementById("routeResult").style.display="none";
+  ["statDist","statEta","statNodes","statQuery"].forEach(id=>document.getElementById(id).textContent="—");
+  document.getElementById("statQueryBadge").style.display="none";
+});
+
+function doRun(silent){
+  const t0 = performance.now();
+  const result = runDijkstra(currentSource, currentDest);
+  lastRun = result;
+  const info = VEH_INFO[currentVehicle];
+
+  if(!result.found){
+    document.getElementById("routeResult").style.display="block";
+    document.getElementById("routeSteps").innerHTML = '<div class="empty-note">No available route — required roads are blocked.</div>';
+    document.getElementById("rmDist").textContent="—";
+    document.getElementById("rmCost").textContent="—";
+    document.getElementById("rmEta").textContent="—";
+    document.getElementById("rmNodes").textContent="0";
+    clearRouteLayer();
+    pushOp("No route available between "+nodes[currentSource].name+" and "+nodes[currentDest].name,"CRITICAL");
+    logHistory(false,result);
+    return;
+  }
+
+  const path = result.path;
+  let realDist=0;
+  for(let i=0;i<path.length-1;i++) realDist += edgeBetween(path[i],path[i+1]).dist;
+  const effCost = result.dist[currentDest];
+  const etaMin = (realDist/info.speed)*60*info.penalty;
+
+  drawRoute(path);
+
+  document.getElementById("statDist").textContent = realDist.toFixed(1)+" km";
+  document.getElementById("statDistFoot").textContent = "Traffic-adjusted cost "+effCost.toFixed(1);
+  document.getElementById("statEta").textContent = etaMin.toFixed(1)+" min";
+  document.getElementById("statEtaFoot").textContent = info.label+" @ "+info.speed+" km/h free-flow";
+  document.getElementById("statNodes").textContent = result.metrics.nodesVisited+" / "+result.metrics.edgesRelaxed;
+  document.getElementById("statNodesFoot").textContent = "visited / relaxed";
+  document.getElementById("statQuery").textContent = result.ms.toFixed(2)+" ms";
+  const badge = document.getElementById("statQueryBadge");
+  badge.style.display="inline-block";
+  badge.textContent = result.ms<200 ? "WITHIN TARGET" : "ABOVE TARGET";
+  badge.className = "badge "+(result.ms<200?"ok":"warn");
+
+  document.getElementById("routeResult").style.display="block";
+  document.getElementById("rmDist").textContent = realDist.toFixed(1)+" km";
+  document.getElementById("rmCost").textContent = effCost.toFixed(1);
+  document.getElementById("rmEta").textContent = etaMin.toFixed(1)+" min";
+  document.getElementById("rmNodes").textContent = path.length;
+
+  const stepsEl = document.getElementById("routeSteps");
+  stepsEl.innerHTML = path.map((id,i)=>{
+    let meta="";
+    if(i>0){
+      const e = edgeBetween(path[i-1],id);
+      meta = "← "+e.dist.toFixed(1)+" km · "+traffic[e.id];
+    }
+    return '<div class="rstep"><div class="num">'+(i+1)+'</div><div><div class="rname">'+esc(nodes[id].name)+'</div>'+(meta?'<div class="rmeta">'+meta+'</div>':'')+'</div></div>';
+  }).join("");
+
+  if(!silent){
+    pushOp("Emergency vehicle dispatched: "+info.label+" from "+nodes[currentSource].name,"INFO");
+  }
+  pushOp("Dijkstra completed — "+path.length+" nodes, "+result.metrics.edgesRelaxed+" edges relaxed, "+result.ms.toFixed(1)+"ms","INFO");
+  logHistory(true,result,realDist);
+  renderAlgLog(result);
+  renderHeapViz(result);
+  renderAnalyticsPage();
+}
+function edgeBetween(a,b){
+  const key = a<b ? a+"-"+b : b+"-"+a;
+  return edges[edgeIndex[key]];
+}
+
+/* ============================= HISTORY ============================= */
+function logHistory(ok, result, distKm){
+  historyLog.unshift({
+    id: historyLog.length+1,
+    vehicle: currentVehicle,
+    src: nodes[currentSource].name,
+    dst: nodes[currentDest].name,
+    ok, ms: result.ms,
+    dist: distKm||0,
+    time: new Date().toLocaleTimeString([], {hour12:false})
+  });
+  if(historyLog.length>50) historyLog.pop();
+  renderReportPage();
+}
+
+/* ============================= TRAFFIC PAGE ============================= */
+function renderTrafficPage(){
+  const body = document.getElementById("roadTableBody");
+  document.getElementById("roadCountSub").textContent = edges.length+" roads";
+  body.innerHTML = edges.map(e=>{
+    const w = effWeight(e);
+    return '<tr><td style="font-family:var(--font-mono);color:var(--text)">'+e.id+'</td>'+
+      '<td>'+esc(nodes[e.a].name)+' → '+esc(nodes[e.b].name)+'</td>'+
+      '<td style="font-family:var(--font-mono)">'+e.dist.toFixed(1)+' km</td>'+
+      '<td style="font-family:var(--font-mono)">'+(w===Infinity?"∞":w.toFixed(1))+'</td>'+
+      '<td><select class="mini" data-edge="'+e.id+'" onchange="window.__setTraffic(&apos;'+e.id+'&apos;,this.value)">'+
+        ["CLEAR","MODERATE","HEAVY","BLOCKED"].map(s=>'<option value="'+s+'" '+(traffic[e.id]===s?"selected":"")+'>'+s+'</option>').join("")+
+      '</select></td></tr>';
+  }).join("");
+
+  const counts = {CLEAR:0,MODERATE:0,HEAVY:0,BLOCKED:0};
+  edges.forEach(e=>counts[traffic[e.id]]++);
+  document.getElementById("trafficChips").innerHTML =
+    '<div class="chip"><i style="background:var(--green)"></i>Clear: '+counts.CLEAR+'</div>'+
+    '<div class="chip"><i style="background:var(--amber)"></i>Moderate: '+counts.MODERATE+'</div>'+
+    '<div class="chip"><i style="background:var(--orange)"></i>Heavy: '+counts.HEAVY+'</div>'+
+    '<div class="chip"><i style="background:var(--red)"></i>Blocked: '+counts.BLOCKED+'</div>';
+}
+window.__setTraffic = function(edgeId, val){
+  traffic[edgeId]=val;
+  refreshRoadColor(edgeId);
+  pushOp("Traffic set on "+edgeId+" → "+val, val==="BLOCKED"?"HIGH":"INFO");
+  if(lastRun) doRun(true);
+  renderTrafficPage();
+  renderNetworkStatsIfVisible();
+};
+
+document.querySelectorAll(".scn-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>applyScenario(btn.dataset.scn));
+});
+function applyScenario(name){
+  currentScenario=name;
+  document.querySelectorAll(".scn-btn").forEach(b=>b.classList.toggle("on", b.dataset.scn===name));
+  if(name==="NORMAL"){
+    edges.forEach(e=>{ const rr=rand(); traffic[e.id]= rr<0.82?"CLEAR":(rr<0.95?"MODERATE":"HEAVY"); });
+    pushOp("Scenario applied: NORMAL — traffic reset to baseline","INFO");
+  } else if(name==="RUSH"){
+    edges.forEach(e=>{ const rr=Math.random(); traffic[e.id]= rr<0.3?"CLEAR":(rr<0.65?"MODERATE":"HEAVY"); });
+    pushOp("Scenario applied: RUSH HOUR — congestion rising city-wide","WARNING");
+  } else if(name==="BLOCK"){
+    edges.forEach(e=>{ const rr=Math.random(); traffic[e.id]= rr<0.7?"CLEAR":(rr<0.85?"MODERATE":"HEAVY"); });
+    const blockCount = 6+Math.floor(Math.random()*5);
+    for(let i=0;i<blockCount;i++){
+      const e = edges[Math.floor(Math.random()*edges.length)];
+      traffic[e.id]="BLOCKED";
+    }
+    pushOp("Scenario applied: ROAD BLOCK — "+blockCount+" roads closed","CRITICAL");
+  } else if(name==="SURGE"){
+    edges.forEach(e=>{ const rr=Math.random(); traffic[e.id]= rr<0.2?"CLEAR":(rr<0.55?"MODERATE":(rr<0.9?"HEAVY":"BLOCKED")); });
+    pushOp("Scenario applied: EMERGENCY SURGE — multiple incidents reported","CRITICAL");
+  }
+  edges.forEach(e=>refreshRoadColor(e.id));
+  renderTrafficPage();
+  renderNetworkStatsIfVisible();
+  if(lastRun){ doRun(true); pushOp("Route recalculated for active scenario","INFO"); }
+}
+
+/* ============================= NETWORK PAGE ============================= */
+let networkBuilt=false;
+function renderNetworkPage(){
+  document.getElementById("netNodes").textContent = nodes.length;
+  document.getElementById("netEdges").textContent = edges.length;
+  const avgDeg = (2*edges.length/nodes.length);
+  document.getElementById("netDegree").textContent = avgDeg.toFixed(2);
+  const maxE = nodes.length*(nodes.length-1)/2;
+  document.getElementById("netDensity").textContent = ((edges.length/maxE)*100).toFixed(2)+"%";
+  renderNetworkStatsIfVisible();
+  if(!networkBuilt){ buildNetSvg(); networkBuilt=true; }
+}
+function renderNetworkStatsIfVisible(){
+  if(!document.getElementById("page-network").classList.contains("active")) return;
+  const counts = {CLEAR:0,MODERATE:0,HEAVY:0,BLOCKED:0};
+  edges.forEach(e=>counts[traffic[e.id]]++);
+  const total=edges.length;
+  const bars = [["CLEAR","var(--green)"],["MODERATE","var(--amber)"],["HEAVY","var(--orange)"],["BLOCKED","var(--red)"]];
+  document.getElementById("netTrafficBars").innerHTML = bars.map(([k,c])=>{
+    const pct = total?((counts[k]/total)*100):0;
+    return '<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10.5px;color:var(--text-dim);margin-bottom:5px;"><span>'+k+'</span><span>'+counts[k]+' roads · '+pct.toFixed(1)+'%</span></div>'+
+      '<div style="height:7px;border-radius:4px;background:#131c30;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+c+';"></div></div></div>';
+  }).join("");
+}
+function buildNetSvg(){
+  const svg = document.getElementById("netSvg");
+  svg.innerHTML="";
+  const g = document.createElementNS(svgNS,"g");
+  svg.appendChild(g);
+  edges.forEach(e=>{
+    const A=nodes[e.a], B=nodes[e.b];
+    const line=document.createElementNS(svgNS,"line");
+    line.setAttribute("x1",A.x*0.98+15); line.setAttribute("y1",A.y*0.65+20);
+    line.setAttribute("x2",B.x*0.98+15); line.setAttribute("y2",B.y*0.65+20);
+    line.setAttribute("stroke","#233150"); line.setAttribute("stroke-width","1");
+    g.appendChild(line);
+  });
+  nodes.forEach(n=>{
+    const c=document.createElementNS(svgNS,"circle");
+    c.setAttribute("cx",n.x*0.98+15); c.setAttribute("cy",n.y*0.65+20); c.setAttribute("r", n.type!=="junction"?4.5:2.2);
+    c.setAttribute("fill", n.type!=="junction" ? landmarkColor(n.type) : "#3d5padding".slice(0,7));
+    c.setAttribute("fill", n.type!=="junction" ? landmarkColor(n.type) : "#4a6089");
+    g.appendChild(c);
+  });
+}
+
+/* ============================= ALGORITHMS PAGE ============================= */
+document.querySelectorAll(".code-tab").forEach(tab=>{
+  tab.addEventListener("click",()=>{
+    document.querySelectorAll(".code-tab").forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    document.querySelectorAll(".alg-panel").forEach(p=>p.style.display="none");
+    document.getElementById("alg-"+tab.dataset.algtab).style.display="block";
+  });
+});
+
+function renderAlgLog(result){
+  document.getElementById("logMeta").textContent = result.log.length+" events · "+result.ms.toFixed(2)+" ms";
+  const lines = result.log.slice(0,220).map(l=>{
+    const cls = l.tag==="HEAP" ? "lg-heap" : l.tag==="RESULT" ? "lg-res" : "lg-tag";
+    return "<div><span class='"+cls+"'>["+l.tag+"]</span> "+esc(l.text)+"</div>";
+  }).join("");
+  document.getElementById("dijkstraLog").innerHTML = lines;
+}
+function renderHeapViz(result){
+  const snap = result.heapSnapshotEarly || [];
+  const arrEl = document.getElementById("heapArray");
+  arrEl.innerHTML = snap.slice(0,12).map((h,i)=>'<div class="heap-cell"><div class="hi">idx '+i+'</div><div class="hn">'+nodeName(h.node)+'</div><div class="hd">'+h.dist.toFixed(1)+'</div></div>').join("") || '<div class="empty-note">no data yet</div>';
+  const posEl = document.getElementById("posArray");
+  posEl.innerHTML = snap.slice(0,8).map(h=>'<div class="heap-cell"><div class="hi">node</div><div class="hn">'+nodeName(h.node)+'</div><div class="hd">pos '+snap.indexOf(h)+'</div></div>').join("") || "";
+
+  // tree render (first 7)
+  const svg = document.getElementById("heapTreeSvg");
+  svg.innerHTML="";
+  const positions = [
+    [280,26],[140,90],[420,90],[70,160],[210,160],[350,160],[490,160]
+  ];
+  const items = snap.slice(0,7);
+  const g = document.createElementNS(svgNS,"g");
+  svg.appendChild(g);
+  // lines
+  for(let i=1;i<items.length;i++){
+    const p = Math.floor((i-1)/2);
+    const line = document.createElementNS(svgNS,"line");
+    line.setAttribute("x1",positions[p][0]); line.setAttribute("y1",positions[p][1]);
+    line.setAttribute("x2",positions[i][0]); line.setAttribute("y2",positions[i][1]);
+    line.setAttribute("stroke","#233150"); line.setAttribute("stroke-width","1.6");
+    g.appendChild(line);
+  }
+  items.forEach((h,i)=>{
+    const [x,y] = positions[i];
+    const c = document.createElementNS(svgNS,"circle");
+    c.setAttribute("cx",x); c.setAttribute("cy",y); c.setAttribute("r", i===0?20:16);
+    c.setAttribute("fill", i===0?"#123543":"#101a2c");
+    c.setAttribute("stroke","#2dd4f0"); c.setAttribute("stroke-width","1.6");
+    g.appendChild(c);
+    const t = document.createElementNS(svgNS,"text");
+    t.setAttribute("x",x); t.setAttribute("y",y-2); t.setAttribute("text-anchor","middle");
+    t.setAttribute("font-size","9.5"); t.setAttribute("font-family","JetBrains Mono, monospace"); t.setAttribute("fill","#e7ecf5");
+    t.textContent = nodeName(h.node).replace("N-","N");
+    g.appendChild(t);
+    const t2 = document.createElementNS(svgNS,"text");
+    t2.setAttribute("x",x); t2.setAttribute("y",y+10); t2.setAttribute("text-anchor","middle");
+    t2.setAttribute("font-size","8.5"); t2.setAttribute("font-family","JetBrains Mono, monospace"); t2.setAttribute("fill","#7fe3c8");
+    t2.textContent = h.dist.toFixed(1);
+    g.appendChild(t2);
+  });
+}
+
+/* pseudocode content */
+const PSEUDO = [
+["Graph creation", "FUNCTION buildGraph(nodeList, edgeList):\\n  FOR each node n in nodeList:\\n    adjacency[n] = empty list\\n  FOR each edge (a, b, distance) in edgeList:\\n    adjacency[a].append({to: b, edge})\\n    adjacency[b].append({to: a, edge})   // undirected\\n  RETURN adjacency"],
+["Min-Heap insertion", "FUNCTION insert(heap, node, dist):\\n  heap.append({node, dist})\\n  i = heap.length - 1\\n  position[node] = i\\n  WHILE i > 0 AND heap[parent(i)].dist > heap[i].dist:\\n    swap(heap, i, parent(i))\\n    i = parent(i)"],
+["Min-Heap extractMin", "FUNCTION extractMin(heap):\\n  top = heap[0]\\n  last = heap.removeLast()\\n  IF heap not empty:\\n    heap[0] = last\\n    position[last.node] = 0\\n    bubbleDown(heap, 0)\\n  RETURN top"],
+["Min-Heap decreaseKey", "FUNCTION decreaseKey(heap, node, newDist):\\n  i = position[node]\\n  heap[i].dist = newDist\\n  WHILE i > 0 AND heap[parent(i)].dist > heap[i].dist:\\n    swap(heap, i, parent(i))\\n    i = parent(i)"],
+["Dijkstra shortest path", "FUNCTION dijkstra(source, destination):\\n  FOR each node n: dist[n] = INFINITY\\n  dist[source] = 0\\n  heap = new MinHeap();  heap.insert(source, 0)\\n  WHILE heap not empty:\\n    u = heap.extractMin()\\n    IF u visited: CONTINUE\\n    mark u visited\\n    IF u == destination: BREAK\\n    FOR each (edge, v) in adjacency[u]:\\n      IF traffic[edge] == BLOCKED: CONTINUE\\n      w = edge.distance * trafficMultiplier(edge)\\n      IF dist[u] + w < dist[v]:\\n        dist[v] = dist[u] + w;  parent[v] = u\\n        IF heap.contains(v): heap.decreaseKey(v, dist[v])\\n        ELSE: heap.insert(v, dist[v])\\n  RETURN reconstructPath(parent, source, destination)"],
+["Traffic update", "FUNCTION setTraffic(edgeId, condition):\\n  trafficMap[edgeId] = condition   // O(1) hash-map write\\n  IF an active route exists:\\n    dijkstra(activeSource, activeDestination)  // re-solve"],
+["Route reconstruction", "FUNCTION reconstructPath(parent, source, destination):\\n  path = []\\n  node = destination\\n  WHILE node is defined:\\n    path.prepend(node)\\n    IF node == source: BREAK\\n    node = parent[node]\\n  RETURN path"]
+];
+document.getElementById("alg-pseudo").innerHTML =
+  '<div class="panel"><div class="panel-head"><div class="panel-title">Pseudocode reference</div><div class="panel-sub">copy into report</div></div><div class="panel-body">'+
+  PSEUDO.map(([title,code])=>'<details class="pseudo-item"><summary>'+title+'</summary><pre>'+esc(code.replace(/\\\\n/g,"\\n"))+'</pre></details>').join("")+
+  '</div></div>';
+
+/* C source content */
+const C_SOURCE = "/* =====================================================================\\n"+
+"   PulseRoute - Smart Emergency Routing System\\n"+
+"   Data structures : Graph (Adjacency List) + Binary Min-Heap\\n"+
+"                    + Traffic HashMap + Visited HashSet\\n"+
+"   Algorithm        : Dijkstra's Single-Source Shortest Path\\n"+
+"   Complexity        : O((V + E) log V) time, O(V + E) space\\n"+
+"   Build             : gcc -O2 -o pulseroute pulseroute.c -lm\\n"+
+"   ===================================================================== */\\n"+
+"#include <stdio.h>\\n#include <stdlib.h>\\n#include <string.h>\\n#include <limits.h>\\n\\n"+
+"#define MAX_NODES 5000\\n#define MAX_EDGES 10000\\n#define INF 1e18\\n\\n"+
+"typedef enum { CLEAR = 0, MODERATE = 1, HEAVY = 2, BLOCKED = 3 } Traffic;\\n\\n"+
+"static double traffic_factor(Traffic t) {\\n    switch (t) {\\n        case CLEAR:    return 1.0;\\n        case MODERATE: return 1.5;\\n        case HEAVY:    return 2.5;\\n        default:       return -1.0; /* BLOCKED: caller must skip */\\n    }\\n}\\n\\n"+
+"/* ---- Edge : adjacency-list entry ---- */\\n"+
+"typedef struct Edge {\\n    int to;\\n    int edgeId;      /* index into trafficMap (HashMap) */\\n    double baseDist;\\n    struct Edge *next;\\n} Edge;\\n\\n"+
+"/* ---- Graph : array of adjacency lists ---- */\\n"+
+"typedef struct {\\n    Edge *head[MAX_NODES];\\n    int numNodes;\\n    int numEdges;\\n} Graph;\\n\\n"+
+"/* ---- HashMap : roadId -> traffic condition (direct-indexed for O(1)) ---- */\\n"+
+"typedef struct {\\n    Traffic condition[MAX_EDGES];\\n} TrafficMap;\\n\\n"+
+"/* ---- HashSet : visited nodes ---- */\\n"+
+"typedef struct {\\n    unsigned char visited[MAX_NODES];\\n} VisitedSet;\\n\\n"+
+"/* ---- Binary Min-Heap (indexed) ---- */\\n"+
+"typedef struct {\\n    int node;\\n    double dist;\\n} HeapItem;\\n\\n"+
+"typedef struct {\\n    HeapItem items[MAX_NODES];\\n    int size;\\n    int position[MAX_NODES];  /* node -> heap index, -1 if absent */\\n} MinHeap;\\n\\n"+
+"void heap_init(MinHeap *h, int n) {\\n    h->size = 0;\\n    for (int i = 0; i < n; i++) h->position[i] = -1;\\n}\\n"+
+"static void heap_swap(MinHeap *h, int i, int j) {\\n    HeapItem tmp = h->items[i]; h->items[i] = h->items[j]; h->items[j] = tmp;\\n    h->position[h->items[i].node] = i;\\n    h->position[h->items[j].node] = j;\\n}\\n"+
+"static void heap_bubble_up(MinHeap *h, int i) {\\n    while (i > 0) {\\n        int p = (i - 1) / 2;\\n        if (h->items[p].dist <= h->items[i].dist) break;\\n        heap_swap(h, p, i); i = p;\\n    }\\n}\\n"+
+"static void heap_bubble_down(MinHeap *h, int i) {\\n    while (1) {\\n        int l = 2*i+1, r = 2*i+2, s = i;\\n        if (l < h->size && h->items[l].dist < h->items[s].dist) s = l;\\n        if (r < h->size && h->items[r].dist < h->items[s].dist) s = r;\\n        if (s == i) break;\\n        heap_swap(h, i, s); i = s;\\n    }\\n}\\n"+
+"void heap_insert(MinHeap *h, int node, double dist) {\\n    h->items[h->size].node = node;\\n    h->items[h->size].dist = dist;\\n    h->position[node] = h->size;\\n    heap_bubble_up(h, h->size);\\n    h->size++;\\n}\\n"+
+"HeapItem heap_extract_min(MinHeap *h) {\\n    HeapItem top = h->items[0];\\n    h->size--;\\n    h->items[0] = h->items[h->size];\\n    h->position[h->items[0].node] = 0;\\n    h->position[top.node] = -1;\\n    if (h->size > 0) heap_bubble_down(h, 0);\\n    return top;\\n}\\n"+
+"void heap_decrease_key(MinHeap *h, int node, double newDist) {\\n    int i = h->position[node];\\n    if (i < 0) return;\\n    h->items[i].dist = newDist;\\n    heap_bubble_up(h, i);\\n}\\n\\n"+
+"/* ---- Graph construction ---- */\\n"+
+"void graph_add_edge(Graph *g, int a, int b, double dist, int edgeId) {\\n    Edge *e1 = malloc(sizeof(Edge));\\n    e1->to = b; e1->edgeId = edgeId; e1->baseDist = dist; e1->next = g->head[a]; g->head[a] = e1;\\n    Edge *e2 = malloc(sizeof(Edge));\\n    e2->to = a; e2->edgeId = edgeId; e2->baseDist = dist; e2->next = g->head[b]; g->head[b] = e2;\\n    g->numEdges++;\\n}\\n\\n"+
+"/* ---- Dijkstra with Min-Heap + traffic-aware relaxation ---- */\\n"+
+"int dijkstra(Graph *g, TrafficMap *tmap, int source, int dest,\\n             double *dist, int *parent, VisitedSet *vis) {\\n    for (int i = 0; i < g->numNodes; i++) { dist[i] = INF; parent[i] = -1; vis->visited[i] = 0; }\\n    dist[source] = 0.0;\\n\\n    MinHeap heap; heap_init(&heap, g->numNodes);\\n    heap_insert(&heap, source, 0.0);\\n\\n    while (heap.size > 0) {\\n        HeapItem top = heap_extract_min(&heap);\\n        int u = top.node;\\n        if (vis->visited[u]) continue;\\n        vis->visited[u] = 1;\\n        if (u == dest) break;\\n\\n        for (Edge *e = g->head[u]; e != NULL; e = e->next) {\\n            Traffic cond = tmap->condition[e->edgeId];\\n            if (cond == BLOCKED) continue;              /* skip blocked roads */\\n            double weight = e->baseDist * traffic_factor(cond);\\n            double cand = dist[u] + weight;\\n            if (cand < dist[e->to]) {\\n                dist[e->to] = cand;\\n                parent[e->to] = u;\\n                if (heap.position[e->to] >= 0)\\n                    heap_decrease_key(&heap, e->to, cand);\\n                else\\n                    heap_insert(&heap, e->to, cand);\\n            }\\n        }\\n    }\\n    return dist[dest] < INF;\\n}\\n\\n"+
+"/* ---- Route reconstruction from parent[] ---- */\\n"+
+"int reconstruct_path(int *parent, int source, int dest, int *outPath) {\\n    int count = 0, node = dest;\\n    int stack[MAX_NODES];\\n    while (node != -1) { stack[count++] = node; if (node == source) break; node = parent[node]; }\\n    for (int i = 0; i < count; i++) outPath[i] = stack[count - 1 - i];\\n    return count;\\n}\\n\\n"+
+"/* ---- Demo: 100+ nodes / 200+ weighted roads, dynamic traffic ---- */\\n"+
+"int main(void) {\\n    Graph g; memset(&g, 0, sizeof(Graph));\\n    g.numNodes = 130;\\n    TrafficMap tmap; memset(&tmap, 0, sizeof(TrafficMap));\\n\\n"+
+"    int edgeId = 0;\\n    /* grid connectivity: 13 columns x 10 rows -> guarantees >=100 nodes, >=200 roads */\\n    int COLS = 13, ROWS = 10;\\n    for (int r = 0; r < ROWS; r++)\\n        for (int c = 0; c < COLS - 1; c++) {\\n            int a = r*COLS+c, b = r*COLS+c+1;\\n            graph_add_edge(&g, a, b, 2.0 + (edgeId % 5), edgeId);\\n            tmap.condition[edgeId] = CLEAR; edgeId++;\\n        }\\n    for (int c = 0; c < COLS; c++)\\n        for (int r = 0; r < ROWS - 1; r++) {\\n            int a = r*COLS+c, b = (r+1)*COLS+c;\\n            graph_add_edge(&g, a, b, 2.0 + (edgeId % 5), edgeId);\\n            tmap.condition[edgeId] = CLEAR; edgeId++;\\n        }\\n\\n"+
+"    double dist[MAX_NODES]; int parent[MAX_NODES]; VisitedSet vis;\\n    int source = 14, destination = 54;  /* Fire Station Alpha -> Central Hospital */\\n\\n"+
+"    tmap.condition[3] = HEAVY;   /* simulate a congested road */\\n    tmap.condition[7] = BLOCKED; /* simulate a closed road   */\\n\\n"+
+"    if (dijkstra(&g, &tmap, source, destination, dist, parent, &vis)) {\\n        int path[MAX_NODES];\\n        int len = reconstruct_path(parent, source, destination, path);\\n        printf(\\\"Optimal route (%d nodes), cost = %.2f\\\\n\\\", len, dist[destination]);\\n        for (int i = 0; i < len; i++) printf(\\\"  N-%03d\\\\n\\\", path[i]);\\n    } else {\\n        printf(\\\"No available route.\\\\n\\\");\\n    }\\n    return 0;\\n}\\n";
+
+document.getElementById("alg-csource").innerHTML =
+  '<div class="panel"><div class="panel-head"><div class="panel-title">C reference implementation</div><div class="panel-sub">compiles standalone with gcc</div></div>'+
+  '<div class="panel-body">'+
+  '<div class="code-head"><div class="panel-sub">pulseroute.c</div><div class="code-actions">'+
+  '<div class="icon-btn" id="copyCBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</div>'+
+  '<div class="icon-btn" id="dlCBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></svg>Download</div>'+
+  '</div></div>'+
+  '<pre class="codeblock" id="cSourceBlock">'+esc(C_SOURCE.replace(/\\\\n/g,"\\n"))+'</pre>'+
+  '</div></div>';
+
+setTimeout(()=>{
+  const copyBtn = document.getElementById("copyCBtn");
+  const dlBtn = document.getElementById("dlCBtn");
+  if(copyBtn) copyBtn.addEventListener("click",()=>{
+    navigator.clipboard.writeText(document.getElementById("cSourceBlock").textContent).then(()=>{
+      copyBtn.innerHTML = "Copied ✓";
+      setTimeout(()=>copyBtn.innerHTML = "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><rect x='9' y='9' width='12' height='12' rx='2'/><path d='M5 15V5a2 2 0 0 1 2-2h10'/></svg>Copy",1500);
+    });
+  });
+  if(dlBtn) dlBtn.addEventListener("click",()=>{
+    const blob = new Blob([document.getElementById("cSourceBlock").textContent], {type:"text/plain"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "pulseroute.c"; a.click();
+  });
+},0);
+
+/* ============================= ANALYTICS PAGE ============================= */
+function renderAnalyticsPage(){
+  const strip = document.getElementById("analyticsStrip");
+  if(!lastRun){
+    strip.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">Run a dispatch query on Monitor to populate analytics.</div>';
+    document.getElementById("perfHistory").innerHTML="";
+    return;
+  }
+  const m = lastRun.metrics;
+  strip.innerHTML =
+    stat("QUERY TIME", lastRun.ms.toFixed(2)+" ms", lastRun.ms<200?"WITHIN TARGET":"ABOVE TARGET", lastRun.ms<200)+
+    stat("NODES VISITED", m.nodesVisited, "of "+nodes.length)+
+    stat("EDGES RELAXED", m.edgesRelaxed, "of "+edges.length)+
+    stat("HEAP INSERTIONS", m.heapInsertions, "insert()") +
+    stat("HEAP EXTRACTIONS", m.heapExtractions, "extractMin()") +
+    stat("DECREASE-KEY OPS", m.decreaseKeyOps, "decreaseKey()") +
+    stat("ROUTE LENGTH", lastRun.path.length, "nodes") +
+    stat("COMPLEXITY", "O((V+E) log V)", "V="+nodes.length+", E="+edges.length);
+
+  const hist = document.getElementById("perfHistory");
+  hist.innerHTML = historyLog.slice(0,10).map(h=>{
+    const pct = Math.min(100,(h.ms/300)*100);
+    return '<div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:4px;"><span>#'+String(h.id).padStart(3,"0")+' · '+h.src+' → '+h.dst+'</span><span style="font-family:var(--font-mono)">'+h.ms.toFixed(2)+' ms</span></div>'+
+      '<div style="height:6px;border-radius:3px;background:#131c30;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+(h.ms<200?"var(--green)":"var(--amber)")+';"></div></div></div>';
+  }).join("") || '<div class="empty-note">No queries yet.</div>';
+}
+function stat(label,val,foot,ok){
+  return '<div class="stat-card"><div class="stat-label">'+label+'</div><div class="stat-value" style="font-size:18px;">'+val+'</div>'+
+    (foot?'<div class="stat-foot">'+(typeof ok==="boolean" ? '<span class="badge '+(ok?"ok":"warn")+'">'+foot+'</span>' : foot)+'</div>':'')+'</div>';
+}
+
+/* ============================= REPORT PAGE ============================= */
+function renderReportPage(){
+  const el = document.getElementById("historyList");
+  if(historyLog.length===0){ el.innerHTML='<div class="empty-note">No dispatch queries yet — run one from the Monitor page.</div>'; return; }
+  el.innerHTML = historyLog.map(h=>{
+    const icon = h.vehicle==="ambulance"
+      ? '<path d="M3 17V8a2 2 0 0 1 2-2h6v11M3 17h1m0 0a2 2 0 1 0 4 0m-4 0h9m5 0a2 2 0 1 0 4 0m-4 0h1m0 0V12h-3l-2-3h-2v8"/>'
+      : '<path d="M8.5 2.5c-1 2-1 4 .5 5.5C7 9.5 6 11.5 6 14a6 6 0 0 0 12 0c0-3-1.5-4.5-3-6 .5 2-1 3-2 2 .5-2-.5-3.5-2-4.5.5 1.5-.5 2.5-1.5 1.5.5-1.5 0-3-1-4.5z"/>';
+    return '<div class="hist-row"><div class="hist-id">#'+String(h.id).padStart(3,"0")+'</div>'+
+      '<div class="hist-veh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+icon+'</svg></div>'+
+      '<div class="hist-mid"><div class="hist-route">'+h.vehicle.toUpperCase()+' · '+esc(h.src)+' → '+esc(h.dst)+'</div><div class="hist-time">'+(h.ok?"Optimized":"No route")+' · '+h.time+(h.dist?' · '+h.dist.toFixed(1)+' km':'')+'</div></div>'+
+      '<div class="hist-ms">'+h.ms.toFixed(1)+' ms</div></div>';
+  }).join("");
+}
+document.getElementById("clearHistBtn").addEventListener("click",()=>{ historyLog=[]; renderReportPage(); });
+
+/* ============================= SETTINGS ============================= */
+document.getElementById("toggleAnim").addEventListener("click",function(){
+  animEnabled = !animEnabled;
+  this.classList.toggle("on",animEnabled);
+});
+document.getElementById("resetSimBtn").addEventListener("click",()=>{
+  edges.forEach(e=>{ const rr=Math.random(); traffic[e.id]= rr<0.82?"CLEAR":(rr<0.95?"MODERATE":"HEAVY"); refreshRoadColor(e.id); });
+  historyLog=[]; opsLog=[]; lastRun=null;
+  clearRouteLayer();
+  document.getElementById("routeResult").style.display="none";
+  renderTrafficPage(); renderReportPage(); renderOps();
+  pushOp("Simulation reset — traffic re-seeded, history cleared","INFO");
+});
+
+/* ============================= SEARCH ============================= */
+document.getElementById("searchBox").addEventListener("keydown",(ev)=>{
+  if(ev.key!=="Enter") return;
+  const q = ev.target.value.trim().toLowerCase();
+  if(!q) return;
+  const hitNode = nodes.find(n=>n.name.toLowerCase().includes(q));
+  const hitEdge = edges.find(e=>e.id.toLowerCase()===q);
+  if(hitEdge){
+    document.querySelector('.nav-item[data-page="monitor"]').click();
+    mapView = {scale:1.6, tx: 650-hitEdge && nodes[hitEdge.a] ? (650-nodes[hitEdge.a].x*1.6) : 0, ty:0};
+    applyMapTransform();
+    pushOp("Search located road "+hitEdge.id,"INFO");
+  } else if(hitNode){
+    document.querySelector('.nav-item[data-page="monitor"]').click();
+    currentSource = hitNode.id; srcSelect.value = hitNode.id;
+    pushOp("Search located "+hitNode.name,"INFO");
+  } else {
+    pushOp("No match found for '"+ev.target.value+"'","WARNING");
+  }
+});
+
+/* ============================= INIT ============================= */
+buildMap();
+selectVehicle("ambulance");
+renderTrafficPage();
+pushOp("PulseRoute engine online — "+nodes.length+" intersections, "+edges.length+" roads loaded","INFO");
+pushOp("Deterministic city graph generated (seed 42)","INFO");
+document.querySelector('.scn-btn[data-scn="NORMAL"]').classList.add("on");
+doRun(false);
+
+})();
+</script>
+</body>
+</html>
